@@ -7,7 +7,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 OUT="${OUT_DIR:-public}"
-BASE_URL="${BASE_URL:-https://tools.ymgn0829.workers.dev}"
+BASE_URL="${BASE_URL:-https://tools.yxmxgxn.workers.dev}"
 BASE_URL="${BASE_URL%/}"
 
 rm -rf "$OUT"

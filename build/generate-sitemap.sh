@@ -4,7 +4,7 @@
 set -euo pipefail
 
 DIR="${1:-public}"
-BASE_URL="${2:-https://tools.ymgn0829.workers.dev}"
+BASE_URL="${2:-https://tools.yxmxgxn.workers.dev}"
 BASE_URL="${BASE_URL%/}"
 OUTPUT="${3:-$DIR/sitemap.xml}"
 

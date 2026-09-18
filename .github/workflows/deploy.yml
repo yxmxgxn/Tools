@@ -19,7 +19,7 @@ jobs:
 
       - name: Build (public/ に配信ファイルを集める + sitemap生成)
         env:
-          BASE_URL: https://tools.ymgn0829.workers.dev
+          BASE_URL: https://tools.yxmxgxn.workers.dev
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
         run: bash build/build.sh
 
@@ -36,8 +36,8 @@ jobs:
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
         run: |
           [ -z "$INDEXNOW_KEY" ] && { echo "INDEXNOW_KEY未設定のためスキップ"; exit 0; }
-          HOST="tools.ymgn0829.workers.dev"
-          BASE_URL="https://tools.ymgn0829.workers.dev"
+          HOST="tools.yxmxgxn.workers.dev"
+          BASE_URL="https://tools.yxmxgxn.workers.dev"
           # 差分ファイルから .html の URL を抽出（index.html は / に正規化）
           DIFF_URLS=$(git diff --name-only --diff-filter=ACM HEAD^ HEAD 2>/dev/null \
             | grep -E '\.html$' \
