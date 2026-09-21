@@ -17,6 +17,8 @@ today=$(date -u +%Y-%m-%d)
     case "$path" in
       404.html) continue ;;
     esac
+    # 一覧に出さない自分用のページ(noindex)は載せない
+    if grep -q 'name="robots" content="noindex"' "$DIR/$path"; then continue; fi
     if [ "$path" = "index.html" ]; then
       loc="$BASE_URL/"
     elif [ "${path%/index.html}" != "$path" ]; then

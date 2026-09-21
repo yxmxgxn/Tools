@@ -1,0 +1,245 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>ハロメン名前ピック | Tools</title>
+<meta name="description" content="記事の文章を貼るだけで、ハロー！プロジェクトのメンバー名を拾い出して重複を除き、スプレッドシートに貼れる形にします。ブックマークレット版つき。">
+<meta name="robots" content="noindex">
+
+<link rel="icon" href="/assets/glasses-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<style>
+  #hn-in {
+    width: 100%; min-height: 180px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px;
+    background: var(--bg); color: var(--fg); font-size: 14px; line-height: 1.6; resize: vertical; font-family: inherit;
+  }
+  #hn-bar { display: flex; gap: 12px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  #hn-bar input[type="text"] {
+    width: 9em; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px;
+    background: var(--bg); color: var(--fg); font-size: 14px;
+  }
+  #hn-bar select {
+    padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px;
+    background: var(--bg); color: var(--fg); font-size: 14px; font-family: inherit;
+  }
+  .hn-btn {
+    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+    cursor: pointer; font-size: 14px; border-radius: 4px;
+  }
+  .hn-btn:hover { border-color: var(--accent); }
+  #hn-status { font-size: 13px; color: var(--muted); }
+  #hn-list { list-style: none; padding: 0; margin: 0.5rem 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  #hn-list label {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+    border: 1px solid var(--line); border-radius: 999px; font-size: 14px; cursor: pointer;
+  }
+  #hn-list input:not(:checked) + span { color: var(--muted); text-decoration: line-through; }
+  #hn-list small { color: var(--muted); font-size: 12px; }
+  #hn-out {
+    width: 100%; min-height: 90px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px;
+    background: var(--code-bg); color: var(--fg); font-size: 13px; line-height: 1.6; resize: vertical;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  #hn-bm {
+    display: inline-block; padding: 6px 14px; border: 1px dashed var(--accent); border-radius: 4px;
+    font-size: 14px; text-decoration: none; cursor: grab;
+  }
+  #hn-bm[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Tools</a></div>
+</header>
+
+<main>
+  <h1>ハロメン名前ピック</h1>
+  記事の文章を貼ると、<strong>ハロプロメンバーの名前だけを拾って重複を消し</strong>、スプレッドシートに貼れる形にします。<br>
+  名前はよみがなマスター（スプレッドシート）にある表記と完全一致で探します。<code>宮本 佳林</code>のような間のスペースや、<code>山崎夢羽</code>（﨑→崎）・<code>高木紗友希</code>（髙→高）のような旧字違いも拾って、マスターの表記で出します。
+
+  <p id="hn-status">メンバー一覧を読み込み中…</p>
+
+  <textarea id="hn-in" placeholder="ここに記事の本文を貼る（ページ全体をCtrl+A→Ctrl+Cで丸ごとでOK）"></textarea>
+
+  <div id="hn-bar">
+    <label>記事ID <input type="text" id="hn-id" placeholder="ID1234" autocomplete="off"></label>
+    <label>区切り
+      <select id="hn-sep">
+        <option value="nl">改行（1人1行）</option>
+        <option value="、">、</option>
+        <option value="・">・</option>
+      </select>
+    </label>
+    <button type="button" class="hn-btn" id="hn-copy">コピー</button>
+    <button type="button" class="hn-btn" id="hn-clear">クリア</button>
+  </div>
+
+  <ul id="hn-list"></ul>
+  <textarea id="hn-out" readonly></textarea>
+  <p style="font-size:13px;color:var(--muted)">
+    記事IDを入れると <code>ID1234⇥名前</code> の形になり、メンバーシートのID列から貼ると2列に分かれて入ります。
+    名前の横の数字は本文に出てきた回数です。一言触れられただけの人は、チェックを外すと出力から消えます。
+  </p>
+
+  <h2>ブックマークレット</h2>
+  <p>
+    下のボタンをブックマークバーにドラッグしておくと、記事ページでクリックするだけで名前を拾ってコピーします。
+    文字を選択してから押すと、選択した部分だけから拾います（関連記事やサイドバーの名前を拾いたくないとき）。
+  </p>
+  <p><a id="hn-bm" href="#" aria-disabled="true">ハロメンピック</a></p>
+  <p style="font-size:13px;color:var(--muted)">
+    メンバー一覧はブックマークレットの中に入っています。マスターに人を足したら、このページを開き直してドラッグし直してください。
+  </p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+<script>
+const MASTER_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS7zVX-GcZhARaYFCFwkoKvtapNqcG3aZ8EwEE87VxPSpMGBRk-Wca3EVkcX9hEh4MX0CVY4G6m68SE/pub?gid=0&single=true&output=csv";
+
+// 旧字・異体字 → 通用字。本文と名前の両方をこれで揃えてから比べる
+const VARIANTS = { "﨑": "崎", "髙": "高", "濵": "浜", "邊": "辺", "邉": "辺", "齊": "斉", "齋": "斎" };
+
+// 比較用に正規化: 全角半角を揃え、空白を消し、旧字を通用字に。
+// ここはブックマークレットにも同じものを埋め込む(文字列化して使う)ので、外の変数に頼らない
+function hnNorm(s, v) {
+  return s.normalize("NFKC").replace(/[\s​]/g, "").replace(/[﨑髙濵邊邉齊齋]/g, c => v[c]);
+}
+
+// 本文から名前を拾う。長い名前から先に探し、一度拾った文字は使わない(短い名前が長い名前の一部で誤爆しないように)。
+// keys: {正規化した名前: マスター表記}。戻り値: [{name, count, first}] を本文に出てきた順で
+function hnPick(text, keys, v) {
+  const t = hnNorm(text, v);
+  const used = new Uint8Array(t.length);
+  const hits = {};
+  Object.keys(keys).sort((a, b) => b.length - a.length).forEach(k => {
+    let i = t.indexOf(k);
+    while (i !== -1) {
+      let free = true;
+      for (let j = i; j < i + k.length; j++) if (used[j]) { free = false; break; }
+      if (free) {
+        for (let j = i; j < i + k.length; j++) used[j] = 1;
+        const n = keys[k];
+        if (!hits[n]) hits[n] = { name: n, count: 0, first: i };
+        hits[n].count++;
+        hits[n].first = Math.min(hits[n].first, i);
+      }
+      i = t.indexOf(k, i + 1);
+    }
+  });
+  return Object.values(hits).sort((a, b) => a.first - b.first);
+}
+
+function parseCsv(text) {
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(cell); cell = ""; }
+    else if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+    else if (c !== "\r") cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+const $ = id => document.getElementById(id);
+let KEYS = {};
+let picked = [];
+
+function render() {
+  picked = hnPick($("hn-in").value, KEYS, VARIANTS);
+  $("hn-list").innerHTML = "";
+  picked.forEach((p, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<label><input type="checkbox" checked data-i="${i}"><span></span><small>${p.count}</small></label>`;
+    li.querySelector("span").textContent = p.name;
+    $("hn-list").appendChild(li);
+  });
+  output();
+}
+
+function output() {
+  const on = [...$("hn-list").querySelectorAll("input")].filter(c => c.checked).map(c => picked[+c.dataset.i].name);
+  const id = $("hn-id").value.trim();
+  const sep = $("hn-sep").value;
+  if (id) $("hn-out").value = on.map(n => `${id}\t${n}`).join("\n");
+  else $("hn-out").value = on.join(sep === "nl" ? "\n" : sep);
+  const all = $("hn-in").value.trim();
+  if (Object.keys(KEYS).length) {
+    $("hn-status").textContent = all ? `${on.length}人（本文から${picked.length}人見つかりました）` : `メンバー${new Set(Object.values(KEYS)).size}人を読み込み済み`;
+  }
+}
+
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch { const t = $("hn-out"); t.select(); return document.execCommand("copy"); }
+}
+
+// ブックマークレットを組み立てる。名前一覧と判定関数をそのまま埋め込む
+function buildBookmarklet() {
+  const code = `(function(){
+var V=${JSON.stringify(VARIANTS)},L=${JSON.stringify([...new Set(Object.values(KEYS))])};
+var N=${hnNorm.toString()};var P=${hnPick.toString()};
+var K={};L.forEach(function(n){K[N(n,V)]=n});
+var s=String(getSelection()||"").trim()||document.body.innerText;
+var r=P(s,K,V);if(!r.length){alert("メンバーの名前は見つかりませんでした");return;}
+var id=prompt(r.map(function(x){return x.name+"（"+x.count+"）"}).join("\\n")+"\\n\\n記事IDを入れるとID付きでコピー（空欄なら名前だけ）","");
+if(id===null)return;id=id.trim();
+var out=r.map(function(x){return id?id+"\\t"+x.name:x.name}).join("\\n");
+function fb(){var t=document.createElement("textarea");t.value=out;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();}
+if(navigator.clipboard)navigator.clipboard.writeText(out).catch(fb);else fb();
+})();`.replace(/function hnNorm/, "function").replace(/function hnPick/, "function");
+  // hnPick の中から呼ぶ hnNorm を、埋め込んだ N に向ける
+  const fixed = code.replace(/hnNorm\(/g, "N(");
+  // 日本語はそのまま残し、URLとして意味を持つ記号だけ逃がす(全部encodeすると3倍に膨らむ)
+  const js = fixed.split("\n").map(l => l.trim()).join("\n")
+    .replace(/%/g, "%25").replace(/#/g, "%23").replace(/\n/g, "%0A");
+  $("hn-bm").href = "javascript:" + js;
+  $("hn-bm").setAttribute("aria-disabled", "false");
+}
+
+async function load() {
+  try {
+    const res = await fetch(MASTER_URL);
+    const rows = parseCsv(await res.text());
+    const col = rows[0].map(h => h.trim()).indexOf("Member");
+    rows.slice(1).forEach(r => {
+      const n = (r[col] || "").trim();
+      if (n) KEYS[hnNorm(n, VARIANTS)] = n;
+    });
+    buildBookmarklet();
+    output();
+    if ($("hn-in").value.trim()) render();
+  } catch (e) {
+    $("hn-status").textContent = "メンバー一覧を読み込めませんでした（" + e.message + "）";
+  }
+}
+
+$("hn-in").addEventListener("input", render);
+$("hn-list").addEventListener("change", output);
+$("hn-id").addEventListener("input", output);
+$("hn-sep").addEventListener("change", output);
+$("hn-copy").addEventListener("click", async () => {
+  if (!$("hn-out").value) return;
+  const ok = await copy($("hn-out").value);
+  $("hn-copy").textContent = ok ? "コピーしました" : "コピーできませんでした";
+  setTimeout(() => $("hn-copy").textContent = "コピー", 1500);
+});
+$("hn-clear").addEventListener("click", () => { $("hn-in").value = ""; $("hn-id").value = ""; render(); $("hn-in").focus(); });
+$("hn-bm").addEventListener("click", e => { e.preventDefault(); alert("ブックマークバーにドラッグして使ってください"); });
+
+load();
+</script>
+</body>
+</html>
