@@ -156,15 +156,20 @@ function hnPanel(r) {
     ".c{width:100%;padding:8px;border:1px solid #888;border-radius:4px;background:#f4f4f4;cursor:pointer;font-size:14px;color:#222}" +
     ".c.ok{background:#e6f4ea;border-color:#34a853}" +
     ".e{color:#888}" +
+    ".s{display:flex;gap:4px;margin-top:8px}" +
+    ".s button{flex:1;padding:4px 0;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:13px;color:#222}" +
+    ".s button.on{background:#222;border-color:#222;color:#fff}" +
     "</style>" +
     "<div class='p'><div class='h'><b></b><button class='x' title='閉じる'>×</button></div>" +
-    "<div class='l'></div><textarea readonly></textarea><button class='c'>コピー</button></div>";
+    "<div class='l'></div>" +
+    "<div class='s'><button data-sep='nl' class='on'>改行</button><button data-sep='、'>、</button><button data-sep='・'>・</button></div>" +
+    "<textarea readonly></textarea><button class='c'>コピー</button></div>";
   const $ = s => root.querySelector(s);
   $(".x").onclick = () => host.remove();
   if (!r.length) {
     $("b").textContent = "ハロメンピック";
     $(".l").innerHTML = "<p class='e'>メンバーの名前は見つかりませんでした</p>";
-    $("textarea").remove(); $(".c").remove();
+    $("textarea").remove(); $(".c").remove(); $(".s").remove();
     document.body.appendChild(host);
     return;
   }
@@ -176,13 +181,21 @@ function hnPanel(r) {
     $(".l").appendChild(lb);
   });
   const ta = $("textarea"), btn = $(".c");
+  let sep = "\n";
   const upd = () => {
     const on = r.filter((x, i) => root.querySelectorAll("input")[i].checked).map(x => x.name);
-    ta.value = on.join("\n");
+    ta.value = on.join(sep);
     $("b").textContent = on.length + "人";
     btn.textContent = "コピー"; btn.className = "c";
   };
   $(".l").onchange = upd;
+  $(".s").onclick = e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    sep = b.dataset.sep === "nl" ? "\n" : b.dataset.sep;
+    root.querySelectorAll(".s button").forEach(x => x.className = x === b ? "on" : "");
+    upd();
+  };
   upd();
   btn.onclick = () => {
     const done = ok => { btn.textContent = ok ? "コピーしました" : "コピーできませんでした（上の枠から手でコピー）"; btn.className = ok ? "c ok" : "c"; };
