@@ -17,10 +17,6 @@
     background: var(--bg); color: var(--fg); font-size: 14px; line-height: 1.6; resize: vertical; font-family: inherit;
   }
   #hn-bar { display: flex; gap: 12px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
-  #hn-bar input[type="text"] {
-    width: 9em; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px;
-    background: var(--bg); color: var(--fg); font-size: 14px;
-  }
   #hn-bar select {
     padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px;
     background: var(--bg); color: var(--fg); font-size: 14px; font-family: inherit;
@@ -48,6 +44,7 @@
     font-size: 14px; text-decoration: none; cursor: grab;
   }
   #hn-bm[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+  .hn-note { font-size: 13px; color: var(--muted); }
 </style>
 </head>
 
@@ -60,14 +57,13 @@
 <main>
   <h1>ハロメン名前ピック</h1>
   記事の文章を貼ると、<strong>ハロプロメンバーの名前だけを拾って重複を消し</strong>、スプレッドシートに貼れる形にします。<br>
-  名前はよみがなマスター（スプレッドシート）にある表記と完全一致で探します。<code>宮本 佳林</code>のような間のスペースや、<code>山崎夢羽</code>（﨑→崎）・<code>高木紗友希</code>（髙→高）のような旧字違いも拾って、マスターの表記で出します。
+  歴代のハロプロメンバーの名前と完全一致で探します。<code>宮本 佳林</code>のような間のスペースや、<code>山崎夢羽</code>（﨑→崎）のような旧字違いも拾って、正しい表記で出します。
 
   <p id="hn-status">メンバー一覧を読み込み中…</p>
 
   <textarea id="hn-in" placeholder="ここに記事の本文を貼る（ページ全体をCtrl+A→Ctrl+Cで丸ごとでOK）"></textarea>
 
   <div id="hn-bar">
-    <label>記事ID <input type="text" id="hn-id" placeholder="ID1234" autocomplete="off"></label>
     <label>区切り
       <select id="hn-sep">
         <option value="nl">改行（1人1行）</option>
@@ -81,19 +77,18 @@
 
   <ul id="hn-list"></ul>
   <textarea id="hn-out" readonly></textarea>
-  <p style="font-size:13px;color:var(--muted)">
-    記事IDを入れると <code>ID1234⇥名前</code> の形になり、メンバーシートのID列から貼ると2列に分かれて入ります。
+  <p class="hn-note">
     名前の横の数字は本文に出てきた回数です。一言触れられただけの人は、チェックを外すと出力から消えます。
   </p>
 
   <h2>ブックマークレット</h2>
   <p>
-    下のボタンをブックマークバーにドラッグしておくと、記事ページでクリックするだけで名前を拾ってコピーします。
+    下のボタンをブックマークバーにドラッグしておくと、記事ページでクリックするだけで、拾った名前が画面の右上に出ます。そこの「コピー」ボタンでコピーできます。
     文字を選択してから押すと、選択した部分だけから拾います（関連記事やサイドバーの名前を拾いたくないとき）。
   </p>
   <p><a id="hn-bm" href="#" aria-disabled="true">ハロメンピック</a></p>
-  <p style="font-size:13px;color:var(--muted)">
-    メンバー一覧はブックマークレットの中に入っています。マスターに人を足したら、このページを開き直してドラッグし直してください。
+  <p class="hn-note">
+    メンバー一覧はブックマークレットの中に入っています。新しいメンバーが入ったら、このページを開き直してドラッグし直してください。
   </p>
 </main>
 
@@ -107,14 +102,16 @@ const MASTER_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS7zVX-GcZhA
 // 旧字・異体字 → 通用字。本文と名前の両方をこれで揃えてから比べる
 const VARIANTS = { "﨑": "崎", "髙": "高", "濵": "浜", "邊": "辺", "邉": "辺", "齊": "斉", "齋": "斎" };
 
-// 比較用に正規化: 全角半角を揃え、空白を消し、旧字を通用字に。
-// ここはブックマークレットにも同じものを埋め込む(文字列化して使う)ので、外の変数に頼らない
+// ここから下の hnNorm / hnPick / hnPanel は、ブックマークレットにも文字列化してそのまま埋め込む。
+// なので外の変数に頼らないこと(必要なものは引数で渡す)。
+
+// 比較用に正規化: 全角半角を揃え、空白を消し、旧字を通用字に
 function hnNorm(s, v) {
   return s.normalize("NFKC").replace(/[\s​]/g, "").replace(/[﨑髙濵邊邉齊齋]/g, c => v[c]);
 }
 
 // 本文から名前を拾う。長い名前から先に探し、一度拾った文字は使わない(短い名前が長い名前の一部で誤爆しないように)。
-// keys: {正規化した名前: マスター表記}。戻り値: [{name, count, first}] を本文に出てきた順で
+// keys: {正規化した名前: 正しい表記}。戻り値: [{name, count, first}] を本文に出てきた順で
 function hnPick(text, keys, v) {
   const t = hnNorm(text, v);
   const used = new Uint8Array(t.length);
@@ -135,6 +132,65 @@ function hnPick(text, keys, v) {
     }
   });
   return Object.values(hits).sort((a, b) => a.first - b.first);
+}
+
+// ブックマークレット用: 記事ページの右上に結果パネルを出す。
+// ページのCSSに崩されないよう Shadow DOM の中に作る。コピーはボタンを押した時に行う(押した操作があるとクリップボードが使える)
+function hnPanel(r) {
+  const old = document.getElementById("hn-pick-panel");
+  if (old) old.remove();
+  const host = document.createElement("div");
+  host.id = "hn-pick-panel";
+  host.style.cssText = "position:fixed;top:16px;right:16px;z-index:2147483647";
+  const root = host.attachShadow({ mode: "open" });
+  root.innerHTML =
+    "<style>" +
+    ".p{width:260px;max-height:80vh;overflow:auto;background:#fff;color:#222;border:1px solid #ccc;border-radius:8px;" +
+    "box-shadow:0 6px 24px rgba(0,0,0,.2);padding:12px;font:14px/1.5 system-ui,sans-serif;box-sizing:border-box}" +
+    ".h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}" +
+    ".x{border:none;background:none;font-size:20px;line-height:1;cursor:pointer;color:#888;padding:0 4px}" +
+    "label{display:flex;gap:6px;align-items:center;padding:2px 0;cursor:pointer}" +
+    "small{color:#888;font-size:12px}" +
+    "input:not(:checked)+span{color:#aaa;text-decoration:line-through}" +
+    "textarea{width:100%;height:80px;margin:8px 0;box-sizing:border-box;font:13px/1.5 monospace;border:1px solid #ccc;border-radius:4px;padding:4px 6px;resize:vertical}" +
+    ".c{width:100%;padding:8px;border:1px solid #888;border-radius:4px;background:#f4f4f4;cursor:pointer;font-size:14px;color:#222}" +
+    ".c.ok{background:#e6f4ea;border-color:#34a853}" +
+    ".e{color:#888}" +
+    "</style>" +
+    "<div class='p'><div class='h'><b></b><button class='x' title='閉じる'>×</button></div>" +
+    "<div class='l'></div><textarea readonly></textarea><button class='c'>コピー</button></div>";
+  const $ = s => root.querySelector(s);
+  $(".x").onclick = () => host.remove();
+  if (!r.length) {
+    $("b").textContent = "ハロメンピック";
+    $(".l").innerHTML = "<p class='e'>メンバーの名前は見つかりませんでした</p>";
+    $("textarea").remove(); $(".c").remove();
+    document.body.appendChild(host);
+    return;
+  }
+  r.forEach(x => {
+    const lb = document.createElement("label");
+    lb.innerHTML = "<input type='checkbox' checked><span></span><small></small>";
+    lb.querySelector("span").textContent = x.name;
+    lb.querySelector("small").textContent = x.count;
+    $(".l").appendChild(lb);
+  });
+  const ta = $("textarea"), btn = $(".c");
+  const upd = () => {
+    const on = r.filter((x, i) => root.querySelectorAll("input")[i].checked).map(x => x.name);
+    ta.value = on.join("\n");
+    $("b").textContent = on.length + "人";
+    btn.textContent = "コピー"; btn.className = "c";
+  };
+  $(".l").onchange = upd;
+  upd();
+  btn.onclick = () => {
+    const done = ok => { btn.textContent = ok ? "コピーしました" : "コピーできませんでした（上の枠から手でコピー）"; btn.className = ok ? "c ok" : "c"; };
+    const fb = () => { ta.focus(); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} done(ok); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(ta.value).then(() => done(true), fb);
+    else fb();
+  };
+  document.body.appendChild(host);
 }
 
 function parseCsv(text) {
@@ -171,13 +227,12 @@ function render() {
 
 function output() {
   const on = [...$("hn-list").querySelectorAll("input")].filter(c => c.checked).map(c => picked[+c.dataset.i].name);
-  const id = $("hn-id").value.trim();
   const sep = $("hn-sep").value;
-  if (id) $("hn-out").value = on.map(n => `${id}\t${n}`).join("\n");
-  else $("hn-out").value = on.join(sep === "nl" ? "\n" : sep);
-  const all = $("hn-in").value.trim();
+  $("hn-out").value = on.join(sep === "nl" ? "\n" : sep);
   if (Object.keys(KEYS).length) {
-    $("hn-status").textContent = all ? `${on.length}人（本文から${picked.length}人見つかりました）` : `メンバー${new Set(Object.values(KEYS)).size}人を読み込み済み`;
+    $("hn-status").textContent = $("hn-in").value.trim()
+      ? `${on.length}人（本文から${picked.length}人見つかりました）`
+      : `メンバー${new Set(Object.values(KEYS)).size}人を読み込み済み`;
   }
 }
 
@@ -186,24 +241,20 @@ async function copy(text) {
   catch { const t = $("hn-out"); t.select(); return document.execCommand("copy"); }
 }
 
-// ブックマークレットを組み立てる。名前一覧と判定関数をそのまま埋め込む
+// ブックマークレットを組み立てる。名前一覧と3つの関数をそのまま埋め込む
 function buildBookmarklet() {
-  const code = `(function(){
-var V=${JSON.stringify(VARIANTS)},L=${JSON.stringify([...new Set(Object.values(KEYS))])};
-var N=${hnNorm.toString()};var P=${hnPick.toString()};
-var K={};L.forEach(function(n){K[N(n,V)]=n});
-var s=String(getSelection()||"").trim()||document.body.innerText;
-var r=P(s,K,V);if(!r.length){alert("メンバーの名前は見つかりませんでした");return;}
-var id=prompt(r.map(function(x){return x.name+"（"+x.count+"）"}).join("\\n")+"\\n\\n記事IDを入れるとID付きでコピー（空欄なら名前だけ）","");
-if(id===null)return;id=id.trim();
-var out=r.map(function(x){return id?id+"\\t"+x.name:x.name}).join("\\n");
-function fb(){var t=document.createElement("textarea");t.value=out;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();}
-if(navigator.clipboard)navigator.clipboard.writeText(out).catch(fb);else fb();
-})();`.replace(/function hnNorm/, "function").replace(/function hnPick/, "function");
-  // hnPick の中から呼ぶ hnNorm を、埋め込んだ N に向ける
-  const fixed = code.replace(/hnNorm\(/g, "N(");
+  const names = [...new Set(Object.values(KEYS))];
+  const code = "(function(){" +
+    "var V=" + JSON.stringify(VARIANTS) + ",L=" + JSON.stringify(names) + ";" +
+    "var hnNorm=" + hnNorm.toString() + ";" +
+    "var hnPick=" + hnPick.toString() + ";" +
+    "var hnPanel=" + hnPanel.toString() + ";" +
+    "var K={};L.forEach(function(n){K[hnNorm(n,V)]=n});" +
+    "var s=String(getSelection()||'').trim()||document.body.innerText;" +
+    "hnPanel(hnPick(s,K,V));" +
+    "})();";
   // 日本語はそのまま残し、URLとして意味を持つ記号だけ逃がす(全部encodeすると3倍に膨らむ)
-  const js = fixed.split("\n").map(l => l.trim()).join("\n")
+  const js = code.split("\n").map(l => l.trim()).join("\n")
     .replace(/%/g, "%25").replace(/#/g, "%23").replace(/\n/g, "%0A");
   $("hn-bm").href = "javascript:" + js;
   $("hn-bm").setAttribute("aria-disabled", "false");
@@ -228,7 +279,6 @@ async function load() {
 
 $("hn-in").addEventListener("input", render);
 $("hn-list").addEventListener("change", output);
-$("hn-id").addEventListener("input", output);
 $("hn-sep").addEventListener("change", output);
 $("hn-copy").addEventListener("click", async () => {
   if (!$("hn-out").value) return;
@@ -236,7 +286,7 @@ $("hn-copy").addEventListener("click", async () => {
   $("hn-copy").textContent = ok ? "コピーしました" : "コピーできませんでした";
   setTimeout(() => $("hn-copy").textContent = "コピー", 1500);
 });
-$("hn-clear").addEventListener("click", () => { $("hn-in").value = ""; $("hn-id").value = ""; render(); $("hn-in").focus(); });
+$("hn-clear").addEventListener("click", () => { $("hn-in").value = ""; render(); $("hn-in").focus(); });
 $("hn-bm").addEventListener("click", e => { e.preventDefault(); alert("ブックマークバーにドラッグして使ってください"); });
 
 load();
