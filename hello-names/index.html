@@ -172,8 +172,10 @@ function hnPanel(r, info) {
   root.innerHTML =
     "<style>" +
     ".p{width:270px;max-height:80vh;overflow:auto;background:#fff;color:#222;border:1px solid #ccc;border-radius:8px;" +
-    "box-shadow:0 6px 24px rgba(0,0,0,.2);padding:12px;font:14px/1.5 system-ui,sans-serif;box-sizing:border-box}" +
-    ".h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}" +
+    "box-shadow:0 6px 24px rgba(0,0,0,.2);padding:0 12px 12px;font:14px/1.5 system-ui,sans-serif;box-sizing:border-box}" +
+    // 人数・コピー・閉じるは一番上に固定(人が多くてスクロールしても押せるように)
+    ".t{position:sticky;top:0;background:#fff;padding:12px 0 8px;border-bottom:1px solid #eee;margin-bottom:6px}" +
+    ".h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}" +
     ".x{border:none;background:none;font-size:20px;line-height:1;cursor:pointer;color:#888;padding:0 4px}" +
     "label{display:flex;gap:6px;align-items:center;padding:2px 0;cursor:pointer}" +
     "small{color:#888;font-size:12px}" +
@@ -186,11 +188,12 @@ function hnPanel(r, info) {
     ".s button{flex:1;padding:4px 0;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;color:#222}" +
     ".s button.on{background:#222;border-color:#222;color:#fff}" +
     "</style>" +
-    "<div class='p'><div class='h'><b></b><button class='x' title='閉じる'>×</button></div>" +
+    "<div class='p'><div class='t'><div class='h'><b></b><button class='x' title='閉じる'>×</button></div>" +
+    "<button class='c'>コピー</button></div>" +
     "<div class='l'></div>" +
     "<div class='s o'><button data-v='member' class='on'>メンバー順</button><button data-v='article'>記事順</button><button data-v='kana'>あいうえお順</button></div>" +
     "<div class='s d'><button data-v='nl' class='on'>改行</button><button data-v='、'>、</button><button data-v='・'>・</button></div>" +
-    "<textarea readonly></textarea><button class='c'>コピー</button></div>";
+    "<textarea readonly></textarea></div>";
   const $ = s => root.querySelector(s);
   $(".x").onclick = () => host.remove();
   if (!r.length) {
@@ -236,7 +239,7 @@ function hnPanel(r, info) {
   btn.onclick = () => {
     // コピーできたら一瞬「コピーしました」を見せてからパネルを閉じる。失敗したら手でコピーできるよう残す
     const done = ok => {
-      btn.textContent = ok ? "コピーしました" : "コピーできませんでした（上の枠から手でコピー）";
+      btn.textContent = ok ? "コピーしました" : "コピーできませんでした（下の枠から手でコピー）";
       btn.className = ok ? "c ok" : "c";
       if (ok) setTimeout(() => host.remove(), 700);
     };
