@@ -16,16 +16,19 @@
     width: 100%; min-height: 180px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px;
     background: var(--bg); color: var(--fg); font-size: 14px; line-height: 1.6; resize: vertical; font-family: inherit;
   }
-  #hn-bar { display: flex; gap: 12px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
-  #hn-bar select {
-    padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px;
-    background: var(--bg); color: var(--fg); font-size: 14px; font-family: inherit;
+  #hn-bar { display: flex; gap: 10px 18px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  .hn-seg { display: inline-flex; align-items: center; gap: 6px; }
+  .hn-seg-label { color: var(--muted); font-size: 13px; }
+  .hn-seg button {
+    padding: 5px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+    cursor: pointer; font-size: 13px; border-radius: 4px;
   }
+  .hn-seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
   .hn-btn {
     padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
     cursor: pointer; font-size: 14px; border-radius: 4px;
   }
-  .hn-btn:hover { border-color: var(--accent); }
+  .hn-btn:hover, .hn-seg button:hover { border-color: var(--accent); }
   #hn-status { font-size: 13px; color: var(--muted); }
   #hn-list { list-style: none; padding: 0; margin: 0.5rem 0; display: flex; flex-wrap: wrap; gap: 6px; }
   #hn-list label {
@@ -64,21 +67,29 @@
   <textarea id="hn-in" placeholder="ここに記事の本文を貼る（ページ全体をCtrl+A→Ctrl+Cで丸ごとでOK）"></textarea>
 
   <div id="hn-bar">
-    <label>区切り
-      <select id="hn-sep">
-        <option value="nl">改行（1人1行）</option>
-        <option value="、">、</option>
-        <option value="・">・</option>
-      </select>
-    </label>
-    <button type="button" class="hn-btn" id="hn-copy">コピー</button>
-    <button type="button" class="hn-btn" id="hn-clear">クリア</button>
+    <span class="hn-seg" id="hn-order">
+      <span class="hn-seg-label">並び</span>
+      <button type="button" data-v="member" aria-pressed="true">メンバー順</button>
+      <button type="button" data-v="article" aria-pressed="false">記事順</button>
+      <button type="button" data-v="kana" aria-pressed="false">あいうえお順</button>
+    </span>
+    <span class="hn-seg" id="hn-sep">
+      <span class="hn-seg-label">区切り</span>
+      <button type="button" data-v="nl" aria-pressed="true">改行</button>
+      <button type="button" data-v="、" aria-pressed="false">、</button>
+      <button type="button" data-v="・" aria-pressed="false">・</button>
+    </span>
+    <span>
+      <button type="button" class="hn-btn" id="hn-copy">コピー</button>
+      <button type="button" class="hn-btn" id="hn-clear">クリア</button>
+    </span>
   </div>
 
   <ul id="hn-list"></ul>
   <textarea id="hn-out" readonly></textarea>
   <p class="hn-note">
-    名前の横の数字は本文に出てきた回数です。一言触れられただけの人は、チェックを外すと出力から消えます。
+    名前の横の数字は本文に出てきた回数です。一言触れられただけの人は、チェックを外すと出力から消えます。<br>
+    メンバー順はハロプロの歴代メンバー順（加入順・グループ順）、記事順は本文に最初に出てきた順です。
   </p>
 
   <h2>ブックマークレット</h2>
@@ -97,12 +108,16 @@
 </footer>
 
 <script>
+// 名前とよみがな(あいうえお順に使う)
 const MASTER_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS7zVX-GcZhARaYFCFwkoKvtapNqcG3aZ8EwEE87VxPSpMGBRk-Wca3EVkcX9hEh4MX0CVY4G6m68SE/pub?gid=0&single=true&output=csv";
+// メンバー順を決めるシート(ハロメン全員。平家みちよから並ぶ)。行の順番そのものを「メンバー順」として使う。名前の列は ORDER_COL
+const ORDER_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFLNyFnLg0oxCm_39mnbRCwttmKUKffQk7_nAZxeydw41KBaFHTR9TqHsHvYvcsZ5Bgl1fQlBPCs0Q/pub?gid=837040930&single=true&output=csv";
+const ORDER_COL = "名前";
 
 // 旧字・異体字 → 通用字。本文と名前の両方をこれで揃えてから比べる
 const VARIANTS = { "﨑": "崎", "髙": "高", "濵": "浜", "邊": "辺", "邉": "辺", "齊": "斉", "齋": "斎" };
 
-// ここから下の hnNorm / hnPick / hnPanel は、ブックマークレットにも文字列化してそのまま埋め込む。
+// ここから下の hnNorm / hnPick / hnSort / hnPanel は、ブックマークレットにも文字列化してそのまま埋め込む。
 // なので外の変数に頼らないこと(必要なものは引数で渡す)。
 
 // 比較用に正規化: 全角半角を揃え、空白を消し、旧字を通用字に
@@ -134,9 +149,20 @@ function hnPick(text, keys, v) {
   return Object.values(hits).sort((a, b) => a.first - b.first);
 }
 
+// 並べ替え。info: {名前: [メンバー順の番号, よみがな]}
+//   member = メンバー順 / article = 本文に最初に出てきた順 / kana = あいうえお順
+function hnSort(r, mode, info) {
+  const f = {
+    member: (a, b) => info[a.name][0] - info[b.name][0],
+    article: (a, b) => a.first - b.first,
+    kana: (a, b) => (info[a.name][1] || a.name).localeCompare(info[b.name][1] || b.name, "ja"),
+  }[mode];
+  return r.slice().sort(f);
+}
+
 // ブックマークレット用: 記事ページの右上に結果パネルを出す。
 // ページのCSSに崩されないよう Shadow DOM の中に作る。コピーはボタンを押した時に行う(押した操作があるとクリップボードが使える)
-function hnPanel(r) {
+function hnPanel(r, info) {
   const old = document.getElementById("hn-pick-panel");
   if (old) old.remove();
   const host = document.createElement("div");
@@ -145,7 +171,7 @@ function hnPanel(r) {
   const root = host.attachShadow({ mode: "open" });
   root.innerHTML =
     "<style>" +
-    ".p{width:260px;max-height:80vh;overflow:auto;background:#fff;color:#222;border:1px solid #ccc;border-radius:8px;" +
+    ".p{width:270px;max-height:80vh;overflow:auto;background:#fff;color:#222;border:1px solid #ccc;border-radius:8px;" +
     "box-shadow:0 6px 24px rgba(0,0,0,.2);padding:12px;font:14px/1.5 system-ui,sans-serif;box-sizing:border-box}" +
     ".h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}" +
     ".x{border:none;background:none;font-size:20px;line-height:1;cursor:pointer;color:#888;padding:0 4px}" +
@@ -156,47 +182,57 @@ function hnPanel(r) {
     ".c{width:100%;padding:8px;border:1px solid #888;border-radius:4px;background:#f4f4f4;cursor:pointer;font-size:14px;color:#222}" +
     ".c.ok{background:#e6f4ea;border-color:#34a853}" +
     ".e{color:#888}" +
-    ".s{display:flex;gap:4px;margin-top:8px}" +
-    ".s button{flex:1;padding:4px 0;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:13px;color:#222}" +
+    ".s{display:flex;gap:4px;margin-top:6px}" +
+    ".s button{flex:1;padding:4px 0;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;color:#222}" +
     ".s button.on{background:#222;border-color:#222;color:#fff}" +
     "</style>" +
     "<div class='p'><div class='h'><b></b><button class='x' title='閉じる'>×</button></div>" +
     "<div class='l'></div>" +
-    "<div class='s'><button data-sep='nl' class='on'>改行</button><button data-sep='、'>、</button><button data-sep='・'>・</button></div>" +
+    "<div class='s o'><button data-v='member' class='on'>メンバー順</button><button data-v='article'>記事順</button><button data-v='kana'>あいうえお順</button></div>" +
+    "<div class='s d'><button data-v='nl' class='on'>改行</button><button data-v='、'>、</button><button data-v='・'>・</button></div>" +
     "<textarea readonly></textarea><button class='c'>コピー</button></div>";
   const $ = s => root.querySelector(s);
   $(".x").onclick = () => host.remove();
   if (!r.length) {
     $("b").textContent = "ハロメンピック";
     $(".l").innerHTML = "<p class='e'>メンバーの名前は見つかりませんでした</p>";
-    $("textarea").remove(); $(".c").remove(); $(".s").remove();
+    ["textarea", ".c", ".o", ".d"].forEach(s => $(s).remove());
     document.body.appendChild(host);
     return;
   }
-  r.forEach(x => {
-    const lb = document.createElement("label");
-    lb.innerHTML = "<input type='checkbox' checked><span></span><small></small>";
-    lb.querySelector("span").textContent = x.name;
-    lb.querySelector("small").textContent = x.count;
-    $(".l").appendChild(lb);
-  });
   const ta = $("textarea"), btn = $(".c");
-  let sep = "\n";
+  const off = {};         // チェックを外した名前(並べ替えても外したまま)
+  let order = "member", sep = "\n";
   const upd = () => {
-    const on = r.filter((x, i) => root.querySelectorAll("input")[i].checked).map(x => x.name);
+    const on = hnSort(r, order, info).filter(x => !off[x.name]).map(x => x.name);
     ta.value = on.join(sep);
     $("b").textContent = on.length + "人";
     btn.textContent = "コピー"; btn.className = "c";
   };
-  $(".l").onchange = upd;
-  $(".s").onclick = e => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    sep = b.dataset.sep === "nl" ? "\n" : b.dataset.sep;
-    root.querySelectorAll(".s button").forEach(x => x.className = x === b ? "on" : "");
+  const list = () => {
+    $(".l").innerHTML = "";
+    hnSort(r, order, info).forEach(x => {
+      const lb = document.createElement("label");
+      lb.innerHTML = "<input type='checkbox'><span></span><small></small>";
+      lb.querySelector("input").checked = !off[x.name];
+      lb.querySelector("input").onchange = e => { off[x.name] = !e.target.checked; upd(); };
+      lb.querySelector("span").textContent = x.name;
+      lb.querySelector("small").textContent = x.count;
+      $(".l").appendChild(lb);
+    });
     upd();
   };
-  upd();
+  const seg = (sel, set) => {
+    $(sel).onclick = e => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      root.querySelectorAll(sel + " button").forEach(x => x.className = x === b ? "on" : "");
+      set(b.dataset.v);
+    };
+  };
+  seg(".o", v => { order = v; list(); });
+  seg(".d", v => { sep = v === "nl" ? "\n" : v; upd(); });
+  list();
   btn.onclick = () => {
     const done = ok => { btn.textContent = ok ? "コピーしました" : "コピーできませんでした（上の枠から手でコピー）"; btn.className = ok ? "c ok" : "c"; };
     const fb = () => { ta.focus(); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} done(ok); };
@@ -222,16 +258,31 @@ function parseCsv(text) {
   return rows;
 }
 
+async function fetchCsv(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const rows = parseCsv(await res.text());
+  const head = rows[0].map(h => h.trim());
+  return rows.slice(1).map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] || "").trim()])));
+}
+
 const $ = id => document.getElementById(id);
-let KEYS = {};
+let KEYS = {};          // {正規化した名前: 正しい表記}
+let NAMES = [];         // メンバー順に並べた名前
+let INFO = {};          // {名前: [メンバー順の番号, よみがな]}
 let picked = [];
+const off = {};         // チェックを外した名前
+let order = "member", sep = "\n";
 
 function render() {
   picked = hnPick($("hn-in").value, KEYS, VARIANTS);
   $("hn-list").innerHTML = "";
-  picked.forEach((p, i) => {
+  hnSort(picked, order, INFO).forEach(p => {
     const li = document.createElement("li");
-    li.innerHTML = `<label><input type="checkbox" checked data-i="${i}"><span></span><small>${p.count}</small></label>`;
+    li.innerHTML = `<label><input type="checkbox"><span></span><small>${p.count}</small></label>`;
+    const cb = li.querySelector("input");
+    cb.checked = !off[p.name];
+    cb.onchange = () => { off[p.name] = !cb.checked; output(); };
     li.querySelector("span").textContent = p.name;
     $("hn-list").appendChild(li);
   });
@@ -239,14 +290,22 @@ function render() {
 }
 
 function output() {
-  const on = [...$("hn-list").querySelectorAll("input")].filter(c => c.checked).map(c => picked[+c.dataset.i].name);
-  const sep = $("hn-sep").value;
-  $("hn-out").value = on.join(sep === "nl" ? "\n" : sep);
-  if (Object.keys(KEYS).length) {
+  const on = hnSort(picked, order, INFO).filter(p => !off[p.name]).map(p => p.name);
+  $("hn-out").value = on.join(sep);
+  if (NAMES.length) {
     $("hn-status").textContent = $("hn-in").value.trim()
       ? `${on.length}人（本文から${picked.length}人見つかりました）`
-      : `メンバー${new Set(Object.values(KEYS)).size}人を読み込み済み`;
+      : `メンバー${NAMES.length}人を読み込み済み`;
   }
+}
+
+function segment(id, set) {
+  $(id).addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    $(id).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    set(b.dataset.v);
+  });
 }
 
 async function copy(text) {
@@ -254,17 +313,18 @@ async function copy(text) {
   catch { const t = $("hn-out"); t.select(); return document.execCommand("copy"); }
 }
 
-// ブックマークレットを組み立てる。名前一覧と3つの関数をそのまま埋め込む
+// ブックマークレットを組み立てる。名前(メンバー順)・よみがなと4つの関数をそのまま埋め込む
 function buildBookmarklet() {
-  const names = [...new Set(Object.values(KEYS))];
   const code = "(function(){" +
-    "var V=" + JSON.stringify(VARIANTS) + ",L=" + JSON.stringify(names) + ";" +
+    "var V=" + JSON.stringify(VARIANTS) + ",L=" + JSON.stringify(NAMES) +
+    ",Y=" + JSON.stringify(NAMES.map(n => INFO[n][1])) + ";" +
     "var hnNorm=" + hnNorm.toString() + ";" +
     "var hnPick=" + hnPick.toString() + ";" +
+    "var hnSort=" + hnSort.toString() + ";" +
     "var hnPanel=" + hnPanel.toString() + ";" +
-    "var K={};L.forEach(function(n){K[hnNorm(n,V)]=n});" +
+    "var K={},I={};L.forEach(function(n,i){K[hnNorm(n,V)]=n;I[n]=[i,Y[i]]});" +
     "var s=String(getSelection()||'').trim()||document.body.innerText;" +
-    "hnPanel(hnPick(s,K,V));" +
+    "hnPanel(hnPick(s,K,V),I);" +
     "})();";
   // 日本語はそのまま残し、URLとして意味を持つ記号だけ逃がす(全部encodeすると3倍に膨らむ)
   const js = code.split("\n").map(l => l.trim()).join("\n")
@@ -275,31 +335,44 @@ function buildBookmarklet() {
 
 async function load() {
   try {
-    const res = await fetch(MASTER_URL);
-    const rows = parseCsv(await res.text());
-    const col = rows[0].map(h => h.trim()).indexOf("Member");
-    rows.slice(1).forEach(r => {
-      const n = (r[col] || "").trim();
-      if (n) KEYS[hnNorm(n, VARIANTS)] = n;
+    const [master, orderRows] = await Promise.all([fetchCsv(MASTER_URL), fetchCsv(ORDER_URL)]);
+    // よみがなは順番シートの「よみがな」列を優先し、無い人はマスターの Yomigana
+    const yomi = {};
+    orderRows.forEach(r => { const n = r[ORDER_COL]; if (n && r["よみがな"] && !(n in yomi)) yomi[n] = r["よみがな"]; });
+    master.forEach(r => { if (r.Member && !yomi[r.Member]) yomi[r.Member] = r.Yomigana || ""; });
+    // メンバー順: 順番シートの行順。そこに無い人(マスターだけにいる人)はマスターの行順で後ろに続ける
+    const seen = new Set();
+    orderRows.map(r => r[ORDER_COL]).concat(Object.keys(yomi)).forEach(n => {
+      if (!n || seen.has(n)) return;
+      seen.add(n);
+      NAMES.push(n);
+    });
+    NAMES.forEach((n, i) => {
+      INFO[n] = [i, yomi[n] || ""];
+      KEYS[hnNorm(n, VARIANTS)] = n;
     });
     buildBookmarklet();
-    output();
-    if ($("hn-in").value.trim()) render();
+    render();
   } catch (e) {
     $("hn-status").textContent = "メンバー一覧を読み込めませんでした（" + e.message + "）";
   }
 }
 
 $("hn-in").addEventListener("input", render);
-$("hn-list").addEventListener("change", output);
-$("hn-sep").addEventListener("change", output);
+segment("hn-order", v => { order = v; render(); });
+segment("hn-sep", v => { sep = v === "nl" ? "\n" : v; output(); });
 $("hn-copy").addEventListener("click", async () => {
   if (!$("hn-out").value) return;
   const ok = await copy($("hn-out").value);
   $("hn-copy").textContent = ok ? "コピーしました" : "コピーできませんでした";
   setTimeout(() => $("hn-copy").textContent = "コピー", 1500);
 });
-$("hn-clear").addEventListener("click", () => { $("hn-in").value = ""; render(); $("hn-in").focus(); });
+$("hn-clear").addEventListener("click", () => {
+  $("hn-in").value = "";
+  Object.keys(off).forEach(k => delete off[k]);
+  render();
+  $("hn-in").focus();
+});
 $("hn-bm").addEventListener("click", e => { e.preventDefault(); alert("ブックマークバーにドラッグして使ってください"); });
 
 load();
