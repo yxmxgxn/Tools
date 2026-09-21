@@ -75,9 +75,9 @@
     </span>
     <span class="hn-seg" id="hn-sep">
       <span class="hn-seg-label">区切り</span>
-      <button type="button" data-v="nl" aria-pressed="true">改行</button>
+      <button type="button" data-v="nl" aria-pressed="false">改行</button>
       <button type="button" data-v="、" aria-pressed="false">、</button>
-      <button type="button" data-v="・" aria-pressed="false">・</button>
+      <button type="button" data-v="・" aria-pressed="true">・</button>
     </span>
     <span>
       <button type="button" class="hn-btn" id="hn-copy">コピー</button>
@@ -234,7 +234,12 @@ function hnPanel(r, info) {
   seg(".d", v => { sep = v === "nl" ? "\n" : v; upd(); });
   list();
   btn.onclick = () => {
-    const done = ok => { btn.textContent = ok ? "コピーしました" : "コピーできませんでした（上の枠から手でコピー）"; btn.className = ok ? "c ok" : "c"; };
+    // コピーできたら一瞬「コピーしました」を見せてからパネルを閉じる。失敗したら手でコピーできるよう残す
+    const done = ok => {
+      btn.textContent = ok ? "コピーしました" : "コピーできませんでした（上の枠から手でコピー）";
+      btn.className = ok ? "c ok" : "c";
+      if (ok) setTimeout(() => host.remove(), 700);
+    };
     const fb = () => { ta.focus(); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} done(ok); };
     if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(ta.value).then(() => done(true), fb);
     else fb();
@@ -272,7 +277,7 @@ let NAMES = [];         // メンバー順に並べた名前
 let INFO = {};          // {名前: [メンバー順の番号, よみがな]}
 let picked = [];
 const off = {};         // チェックを外した名前
-let order = "member", sep = "\n";
+let order = "member", sep = "・";
 
 function render() {
   picked = hnPick($("hn-in").value, KEYS, VARIANTS);
