@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>8RGB指定</title>
+<title>8RGB指定 | Hello! Tools</title>
+<meta name="description" content="RGBの各チャンネルを0〜7の8段階で指定して色を作る／確認するツール。8RGB表記とHEXを出力します。">
 <link rel="icon" href="/assets/glasses-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
 <meta property="og:title" content="8-Step RGB Grid Color Space Specification Method">
 <meta property="og:image" content="https://yxmxgxn.github.io/8RGBSpecification/8RGB.png">
 <meta property="og:url" content="https://tools.yxmxgxn.workers.dev/8rgb/">
@@ -13,181 +15,61 @@
 <meta name="twitter:image" content="https://yxmxgxn.github.io/8RGBSpecification/8RGB.png">
 <meta name="twitter:creator" content="@yxmxgxn">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #ffffff;
-    --panel: #f5f5f5;
-    --border: #dddddd;
-    --text: #111111;
-    --muted: #888;
-    --accent: #111111;
-  }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-
-  .container { width: 100%; max-width: 440px; }
-
-  h1 {
-    font-size: 17px;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 20px;
-  }
+  .container { max-width: 440px; }
 
   /* 3分割プレビュー */
-  .preview-wrap {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 16px;
-    height: 120px;
-  }
-
+  .preview-wrap { display: flex; gap: 4px; margin-bottom: 16px; height: 120px; }
   .swatch {
-    flex: 1;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    padding-bottom: 8px;
-    transition: background 0.1s ease;
+    flex: 1; border-radius: var(--radius); border: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding-bottom: 8px; transition: background 0.1s ease;
   }
-
-  .swatch.main { flex: 2; border: 2px solid #111; }
-
-  .swatch-label {
-    font-size: 13px;
-    font-weight: 700;
-    color: rgba(0,0,0,0.35);
-  }
+  .swatch.main { flex: 2; border: 2px solid var(--fg); }
+  /* 色見本の上の文字は、見本の色に合わせて濃淡を切り替える */
+  .swatch-label { font-size: 13px; font-weight: 700; color: rgba(0,0,0,0.35); }
   .swatch-label.light { color: rgba(255,255,255,0.6); }
 
   /* コード */
-  .codes {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 20px;
-  }
-
+  .codes { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
   .code-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 4px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 10px 14px;
   }
-
   .code-label { font-size: 15px; color: var(--muted); }
-
-  .code-value {
-    font-size: 21px;
-    font-weight: 700;
-    color: var(--accent);
-    cursor: pointer;
-    user-select: all;
-  }
-  .code-value:hover { opacity: 0.6; }
+  .code-value { font-size: 21px; font-weight: 700; cursor: pointer; user-select: all; }
+  .code-value:hover { color: var(--accent); }
 
   /* スライダー */
-  .sliders {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .slider-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .channel-label {
-    font-size: 18px;
-    font-weight: 700;
-    width: 16px;
-    text-align: center;
-  }
+  .sliders { display: flex; flex-direction: column; gap: 14px; }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .channel-label { font-size: 18px; font-weight: 700; width: 16px; text-align: center; }
   .channel-label.r { color: #cc0000; }
   .channel-label.g { color: #006600; }
   .channel-label.b { color: #0000cc; }
-
-  .steps {
-    display: flex;
-    gap: 3px;
-    flex: 1;
-  }
-
-  .step-btn {
-    flex: 1;
-    height: 34px;
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 10px;
-    transition: all 0.1s ease;
-    background: var(--panel);
-  }
-  .step-btn:hover { border-color: #999; }
-  .step-btn.active { border: 2px solid #111; }
-
-  /* ◁▷ボタン */
+  .steps { display: flex; gap: 3px; flex: 1; }
+  /* 背景色はスクリプトが各段の色で塗る */
+  .step-btn { flex: 1; height: 34px; padding: 0; border-radius: 3px; font-size: 10px; transition: all 0.1s ease; }
+  .step-btn.active { border: 2px solid var(--fg); }
   .arrow-btn {
-    width: 28px;
-    height: 34px;
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    background: var(--panel);
-    cursor: pointer;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.1s;
-    flex-shrink: 0;
+    width: 28px; height: 34px; padding: 0; border-radius: 3px; font-size: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
   }
-  .arrow-btn:hover { border-color: #999; background: #eee; }
-  .arrow-btn:active { background: #ddd; }
   .arrow-btn:disabled { opacity: 0.2; cursor: default; }
-
-  .value-display {
-    font-size: 22px;
-    font-weight: 700;
-    width: 22px;
-    text-align: center;
-    color: var(--accent);
-  }
-
-  .footer {
-    margin-top: 28px;
-    font-size: 14px;
-    color: var(--muted);
-    text-align: center;
-  }
+  .value-display { font-size: 22px; font-weight: 700; width: 22px; text-align: center; }
 </style>
 </head>
 <body>
-<a href="/" style="position:fixed;top:12px;left:14px;font-size:13px;color:#888;text-decoration:none;z-index:10;">← Tools</a>
-<div class="container">
-  <h1>8RGB Specification</h1>
 
-  <div class="preview-wrap">
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <h1>8RGB指定</h1>
+  <p>RGBの各チャンネルを0〜7の8段階で指定して色を作ります。クリックした値の前後の色が両側に並びます。8RGB・HEXのコードはクリックでコピーできます。</p>
+  <div class="container">
+<div class="preview-wrap">
     <div class="swatch" id="swatch-prev"><span class="swatch-label" id="label-prev"></span></div>
     <div class="swatch main" id="swatch-main"><span class="swatch-label" id="label-main"></span></div>
     <div class="swatch" id="swatch-next"><span class="swatch-label" id="label-next"></span></div>
@@ -227,13 +109,16 @@
       <span class="value-display" id="val-b">0</span>
     </div>
   </div>
+  </div>
+</main>
 
-  <div class="footer">各チャンネル0〜7の8段階でクリックした値の前後が両側になります<br>
-  <a href="https://x.com/yxmxgxn" target="_blank">@yxmxgxn</a></div>
-</div>
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
 
 <script>
-  const state = { r: 0, g: 5, b: 6 };
+  // 初期色はサイトのアクセントカラー #8C6BB8 にいちばん近い 8RGB(#$435 = #926DB6)
+  const state = { r: 4, g: 3, b: 5 };
   let compareChannel = 'r';
 
   function toRGB255(v) {

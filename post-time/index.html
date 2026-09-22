@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>SNS投稿日時チェック | Tools</title>
-<meta name="description" content="X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時とアカウント名を表示するツールです。URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。">
+<title>SNS投稿日時ビューア | Hello! Tools</title>
+<meta name="description" content="X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時(タイムスタンプ)とアカウント名を表示するツールです。URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。">
 
-<meta property="og:title" content="SNS投稿日時チェック">
-<meta property="og:description" content="X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLから、投稿日時とアカウント名を表示します。">
+<meta property="og:title" content="SNS投稿日時ビューア">
+<meta property="og:description" content="X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLから、投稿日時(タイムスタンプ)とアカウント名を秒まで表示します。">
 <meta property="og:type" content="website">
 
 <link rel="canonical" href="">
@@ -19,8 +19,8 @@
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "SNS投稿日時チェック",
-  "description": "X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時とアカウント名を表示するツールです。URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。",
+  "name": "SNS投稿日時ビューア",
+  "description": "X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時(タイムスタンプ)とアカウント名を表示するツールです。URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。",
   "applicationCategory": "UtilityApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
@@ -28,11 +28,7 @@
 </script>
 
 <style>
-  #pt-url {
-    width: 100%; min-height: 5.5em; padding: 8px 10px; margin: 0.75rem 0;
-    border: 1px solid var(--line); font-size: 14px; font-family: inherit;
-    background: var(--bg); color: var(--fg); resize: vertical;
-  }
+  #pt-url { min-height: 5.5em; margin: 0.75rem 0; }
   #pt-list { list-style: none; margin: 0.5rem 0; padding: 0; }
   .pt-row {
     border: 1px solid var(--line); border-radius: 8px;
@@ -53,59 +49,32 @@
   }
   .pt-time { font-size: 1.25rem; font-weight: 700; }
   .pt-ago { color: var(--muted); font-size: 13px; }
-  .pt-copy {
-    padding: 3px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 13px; border-radius: 4px;
-  }
+  .pt-copy { padding: 3px 10px; font-size: 13px; }
   .pt-url { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 0.3rem; }
-  .pt-hint { font-size: 13px; color: var(--muted); margin-top: 0.3rem; }
-  .pt-err { color: #c0392b; font-size: 14px; }
-  #pt-format {
-    display: flex; gap: 14px; margin: 0 0 0.75rem;
-    flex-wrap: wrap; align-items: center; font-size: 14px;
-  }
-  #pt-format label { display: flex; align-items: center; gap: 4px; }
+  .pt-row .hint-text { margin-top: 0.3rem; }
+  #pt-format { margin-top: 0; }
   #pt-format label.pt-off { color: var(--muted); }
-  #pt-preset {
-    padding: 6px 10px; border: 1px solid var(--line); font-size: 14px; margin-left: 6px;
-    background: var(--bg); color: var(--fg);
-  }
+  #pt-preset { margin-left: 6px; }
   #pt-custom-box { margin: 0 0 0.75rem; }
-  #pt-custom {
-    width: 100%; max-width: 320px; padding: 6px 10px;
-    border: 1px solid var(--line); font-size: 14px;
-    background: var(--bg); color: var(--fg);
-  }
+  #pt-custom { width: 100%; max-width: 320px; }
   .pt-legend { font-size: 12px; color: var(--muted); margin-top: 0.3rem; }
-  .pt-bml {
-    display: flex; gap: 10px; align-items: center;
-    flex-wrap: wrap; margin: 0.75em 0;
-  }
-  .pt-bml-link {
-    display: inline-block; padding: 8px 16px; background: var(--accent);
-    border-radius: 4px; color: #fff !important; text-decoration: none; font-size: 14px;
-  }
-  .pt-bml-copy {
-    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 14px; border-radius: 4px;
-  }
 </style>
 </head>
 
 <body>
 
 <header class="site-header">
-  <div class="wrap"><a class="brand" href="/">Tools</a></div>
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
 </header>
 
 <main>
-  <h1>SNS投稿日時チェック</h1>
-  X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時(日本時間)とアカウント名を表示します。<br>
+  <h1>SNS投稿日時ビューア</h1>
+  X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時(タイムスタンプ・日本時間)とアカウント名を表示します。「2日前」「1年前」のような大まかな表示ではなく、秒まで正確に分かります。<br>
   URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。1行に1つずつ、複数まとめて貼れます。
 
   <textarea id="pt-url" placeholder="https://x.com/ユーザー名/status/0000000000&#10;https://www.instagram.com/p/XXXXXXXXXXX/&#10;https://www.tiktok.com/@ユーザー名/video/0000000000" autocomplete="off" spellcheck="false"></textarea>
 
-  <div id="pt-format">
+  <div id="pt-format" class="option-row">
     <label>表示形式
       <select id="pt-preset">
         <option value="slash">2026/09/22 13:51:14</option>
@@ -131,8 +100,8 @@
   対応しているSNSで投稿のページを開いた状態で実行すると、その場で正確な投稿日時(秒まで)とアカウント名を表示します。「2日前」「3-4」「1年前」のような大まかな表示しか出ないときに便利です。「コピー」で日時をコピーできます。<br>
   このツールのページは開かず、計算もその場で済ませるので、どこにも通信しません。表示形式は <code>yyyy/mm/dd hh:mm:ss</code> で固定です。<br>
   PCでは下のボタンをブックマークバーにドラッグして登録してください。スマホでは「コードをコピー」して、適当なページをブックマークしてから編集でURL欄に貼り付けてください。
-  <div class="pt-bml">
-    <a class="pt-bml-link" href="javascript:(function(){var u=location.href,m,ms=0,a='',i,n,s,L,B='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';function g(c){var x=0n;for(i=0;i<c.length;i++)x=x*64n+BigInt(B.indexOf(c[i]));return Number((x>>23n)+1314220021721n)}if(m=u.match(/(?:x|twitter)\.com\/(\w+)\/status(?:es)?\/(\d{15,19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number((BigInt(m[2])>>22n)+1288834974657n)}else if(m=u.match(/instagram\.com\/stories\/([\w.]+)\/(\d{19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number((BigInt(m[2])>>23n)+1314220021721n)}else if(m=u.match(/instagram\.com\/(?:([\w.]+)\/)?(?:p|reels?|tv)\/([\w-]{10,11})(?:[\/?\x23]|$)/)){a=m[1]||'';ms=g(m[2])}else if(m=u.match(/tiktok\.com\/@([\w.]+)\/(?:video|photo)\/(\d{19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number(BigInt(m[2])>>32n)*1000}else if(m=u.match(/threads\.(?:net|com)\/@([\w.]+)\/post\/([\w-]{11})(?:[\/?\x23]|$)/)){a=m[1];ms=g(m[2])}else if(m=u.match(/bsky\.app\/profile\/([^\/]+)\/post\/([a-z2-7]{13})(?:[\/?\x23]|$)/)){a=m[1];n=0n;for(i=0;i<13;i++)n=n*32n+BigInt('234567abcdefghijklmnopqrstuvwxyz'.indexOf(m[2][i]));ms=Number((n>>10n)/1000n)}else if(m=u.match(/\/notes\/([0-9a-z]{10}|[0-9a-z]{16}|[0-9A-HJKMNP-TV-Z]{26}|[0-9a-g][0-9a-f]{23})(?:[\/?\x23]|$)/)){s=m[1];L=s.length;if(L<17)ms=parseInt(s.slice(0,8),36)+946684800000;else if(L==26)for(i=0;i<10;i++)ms=ms*32+'0123456789ABCDEFGHJKMNPQRSTVWXYZ'.indexOf(s[i]);else{ms=parseInt(s.slice(1,12),16);if(ms<1136073600000||ms>Date.now()+864e5)ms=parseInt(s.slice(0,8),16)*1000}}else if(m=u.match(/\/@(\w+(?:@[^\/]+)?)\/(\d{17,18})(?:[\/?\x23]|$)/)){a=m[1];ms=Number(BigInt(m[2])>>16n)}if(!(ms>=1136073600000)||ms>Date.now()+864e5){alert('対応しているSNSの投稿のページで実行してください');return}var d=new Date(ms+324e5),p=function(x){return('0'+x).slice(-2)},D=d.getUTCFullYear()+'/'+p(d.getUTCMonth()+1)+'/'+p(d.getUTCDate())+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds()),o=document.getElementById('pt-bml-box');if(o)o.remove();function E(t,x,c){var e=document.createElement(t);e.textContent=x;e.style.cssText=c.replace(/;/g,'!important;')+'!important';return e}var K='all:revert;margin:8px 4px 0;font-size:14px;cursor:pointer',w=E('div','','all:revert;position:fixed;z-index:2147483647;top:12px;left:0;right:0;margin:0 auto;width:max-content;max-width:90vw;box-sizing:border-box;background:rgb(255,255,255);color:rgb(0,0,0);border:1px solid rgb(153,153,153);padding:12px 16px;font:16px/1.5 sans-serif;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3)'),b=E('button','コピー',K),c=E('button','閉じる',K);w.id='pt-bml-box';w.appendChild(E('div',a==''||a=='i'?'投稿日時(日本時間)':'@'+a+' の投稿日時(日本時間)','all:revert;font-size:14px'));var v=E('div',D,'all:revert;font-size:20px;user-select:all');w.appendChild(v);b.onclick=function(){function F(){var r=document.createRange(),S=getSelection();r.selectNodeContents(v);S.removeAllRanges();S.addRange(r);b.textContent=document.execCommand('copy')?'コピーしました':'選択したのでコピーしてください'}if(navigator.clipboard)navigator.clipboard.writeText(D).then(function(){b.textContent='コピーしました'},F);else F()};c.onclick=function(){w.remove()};w.appendChild(b);w.appendChild(c);document.body.appendChild(w)})();">投稿日時を表示</a>
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){var u=location.href,m,ms=0,a='',i,n,s,L,B='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';function g(c){var x=0n;for(i=0;i<c.length;i++)x=x*64n+BigInt(B.indexOf(c[i]));return Number((x>>23n)+1314220021721n)}if(m=u.match(/(?:x|twitter)\.com\/(\w+)\/status(?:es)?\/(\d{15,19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number((BigInt(m[2])>>22n)+1288834974657n)}else if(m=u.match(/instagram\.com\/stories\/([\w.]+)\/(\d{19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number((BigInt(m[2])>>23n)+1314220021721n)}else if(m=u.match(/instagram\.com\/(?:([\w.]+)\/)?(?:p|reels?|tv)\/([\w-]{10,11})(?:[\/?\x23]|$)/)){a=m[1]||'';ms=g(m[2])}else if(m=u.match(/tiktok\.com\/@([\w.]+)\/(?:video|photo)\/(\d{19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number(BigInt(m[2])>>32n)*1000}else if(m=u.match(/threads\.(?:net|com)\/@([\w.]+)\/post\/([\w-]{11})(?:[\/?\x23]|$)/)){a=m[1];ms=g(m[2])}else if(m=u.match(/bsky\.app\/profile\/([^\/]+)\/post\/([a-z2-7]{13})(?:[\/?\x23]|$)/)){a=m[1];n=0n;for(i=0;i<13;i++)n=n*32n+BigInt('234567abcdefghijklmnopqrstuvwxyz'.indexOf(m[2][i]));ms=Number((n>>10n)/1000n)}else if(m=u.match(/\/notes\/([0-9a-z]{10}|[0-9a-z]{16}|[0-9A-HJKMNP-TV-Z]{26}|[0-9a-g][0-9a-f]{23})(?:[\/?\x23]|$)/)){s=m[1];L=s.length;if(L<17)ms=parseInt(s.slice(0,8),36)+946684800000;else if(L==26)for(i=0;i<10;i++)ms=ms*32+'0123456789ABCDEFGHJKMNPQRSTVWXYZ'.indexOf(s[i]);else{ms=parseInt(s.slice(1,12),16);if(ms<1136073600000||ms>Date.now()+864e5)ms=parseInt(s.slice(0,8),16)*1000}}else if(m=u.match(/\/@(\w+(?:@[^\/]+)?)\/(\d{17,18})(?:[\/?\x23]|$)/)){a=m[1];ms=Number(BigInt(m[2])>>16n)}if(!(ms>=1136073600000)||ms>Date.now()+864e5){alert('対応しているSNSの投稿のページで実行してください');return}var d=new Date(ms+324e5),p=function(x){return('0'+x).slice(-2)},D=d.getUTCFullYear()+'/'+p(d.getUTCMonth()+1)+'/'+p(d.getUTCDate())+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds()),o=document.getElementById('pt-bml-box');if(o)o.remove();function E(t,x,c){var e=document.createElement(t);e.textContent=x;e.style.cssText=c.replace(/;/g,'!important;')+'!important';return e}var K='all:revert;margin:8px 4px 0;font-size:14px;cursor:pointer',w=E('div','','all:revert;position:fixed;z-index:2147483647;top:12px;left:0;right:0;margin:0 auto;width:max-content;max-width:90vw;box-sizing:border-box;background:rgb(255,255,255);color:rgb(0,0,0);border:1px solid rgb(153,153,153);padding:12px 16px;font:16px/1.5 sans-serif;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3)'),b=E('button','コピー',K),c=E('button','閉じる',K);w.id='pt-bml-box';w.appendChild(E('div',a==''||a=='i'?'投稿日時(日本時間)':'@'+a+' の投稿日時(日本時間)','all:revert;font-size:14px'));var v=E('div',D,'all:revert;font-size:20px;user-select:all');w.appendChild(v);b.onclick=function(){function F(){var r=document.createRange(),S=getSelection();r.selectNodeContents(v);S.removeAllRanges();S.addRange(r);b.textContent=document.execCommand('copy')?'コピーしました':'選択したのでコピーしてください'}if(navigator.clipboard)navigator.clipboard.writeText(D).then(function(){b.textContent='コピーしました'},F);else F()};c.onclick=function(){w.remove()};w.appendChild(b);w.appendChild(c);document.body.appendChild(w)})();">投稿日時を表示</a>
     <button type="button" class="pt-bml-copy">コードをコピー</button>
   </div>
 
@@ -487,7 +456,7 @@
       var li = el("li", "pt-row");
 
       if (r.err) {
-        li.appendChild(el("div", "pt-err", r.err));
+        li.appendChild(el("div", "error-text", r.err));
         li.appendChild(el("div", "pt-url", line));
         list.appendChild(li);
         return;
@@ -523,7 +492,7 @@
       tl.appendChild(btn);
       li.appendChild(tl);
 
-      if (r.hint) li.appendChild(el("div", "pt-hint", r.hint));
+      if (r.hint) li.appendChild(el("div", "hint-text", r.hint));
       // 貼られたURLから投稿へ飛べるようにする。https:// 抜きで貼られても開けるよう補う
       var post = el("a", null, line);
       post.href = r.postUrl || (/^https?:\/\//.test(line) ? line : "https://" + line.replace(/^\/+/, ""));

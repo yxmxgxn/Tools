@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>日時フォーマット変換 | Tools</title>
+<title>日時フォーマット変換 | Hello! Tools</title>
 <meta name="description" content="どんな書き方の日時でも貼るだけで、ISO 8601・Unix時間・日本語表記・和暦・スプレッドシートのシリアル値など、ありとあらゆる形式に一括変換します。タイムゾーン変換・複数行の一括変換つき。">
 
 <meta property="og:title" content="日時フォーマット変換">
@@ -28,59 +28,27 @@
 </script>
 
 <style>
-  #dt-controls { display: flex; gap: 10px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; }
-  #dt-controls input[type="text"] {
-    flex: 1; min-width: 140px; padding: 6px 10px;
-    border: 1px solid var(--line); font-size: 14px; background: var(--bg); color: var(--fg);
-  }
-  #dt-now {
-    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 14px; border-radius: 4px;
-  }
-  #dt-options { display: flex; gap: 14px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
-  #dt-options label { display: flex; align-items: center; gap: 4px; }
-  select {
-    padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px;
-    background: var(--bg); color: var(--fg); font-size: 14px; font-family: inherit;
-  }
+  #dt-in { min-width: 140px; }
   #dt-summary { margin: 1em 0 0.25em; font-size: 15px; }
-  #dt-note { margin: 0 0 0.75em; font-size: 13px; color: var(--muted); }
+  #dt-note { margin: 0 0 0.75em; }
   .dt-g { margin: 1.1rem 0 0.35rem; font-size: 0.85rem; color: var(--muted); font-weight: 700; }
   .dt-row { display: grid; grid-template-columns: 200px 1fr auto; gap: 8px; align-items: center; margin: 5px 0; }
   .dt-label { font-size: 13px; color: var(--muted); }
-  .dt-val {
-    padding: 6px 10px; background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px;
-    font-size: 13px; word-break: break-all; min-width: 0;
-  }
-  .dt-copy {
-    padding: 5px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 13px; border-radius: 4px; white-space: nowrap;
-  }
-  .dt-copy:hover { border-color: var(--accent); }
+  .dt-val { padding: 6px 10px; min-width: 0; }
+  .dt-copy { padding: 5px 10px; font-size: 13px; white-space: nowrap; }
   @media (max-width: 620px) {
     .dt-row { grid-template-columns: 1fr auto; }
     .dt-label { grid-column: 1 / -1; margin-bottom: -2px; }
   }
-  #dt-err { color: #c0392b; font-size: 14px; }
-  #bulk-in, #bulk-out {
-    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px;
-    background: var(--bg); color: var(--fg); font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    line-height: 1.6; resize: vertical;
-  }
+  #bulk-in, #bulk-out { padding: 8px 10px; font-size: 13px; font-family: var(--mono); }
   #bulk-out { background: var(--code-bg); }
-  #bulk-bar { display: flex; gap: 10px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
-  #bulk-copy {
-    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 14px; border-radius: 4px;
-  }
-  hr.tool-sep { border: none; border-top: 1px solid var(--line); margin: 2.5rem 0 0; }
 </style>
 </head>
 
 <body>
 
 <header class="site-header">
-  <div class="wrap"><a class="brand" href="/">Tools</a></div>
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
 </header>
 
 <main>
@@ -88,12 +56,12 @@
   日時をどんな書き方で貼っても、<strong>考えられる全部の形式に一度に変換</strong>します。<code>2026-08-15T15:05:00+09:00</code> でも <code>令和8年8月15日 午後3時5分</code> でも <code>1786...</code>(Unix時間) でも <code>46249.6285</code>(スプレッドシートのシリアル値) でも読み取ります。<br>
   スプレッドシートで日時が勝手に変換されて崩れる問題に対して、<strong>テキストとして貼れる形・シリアル値・<code>=DATE()+TIME()</code> 数式</strong>を用意しています。
 
-  <div id="dt-controls">
+  <div class="input-row">
     <input type="text" id="dt-in" placeholder="2026/8/15 15:05  /  令和8年8月15日  /  1786000000  /  46249.6285" autocomplete="off">
     <button id="dt-now" type="button">今</button>
   </div>
 
-  <div id="dt-options">
+  <div class="option-row">
     <label>入力の地域
       <select id="dt-tzin"></select>
     </label>
@@ -110,12 +78,12 @@
     </label>
   </div>
 
-  <div id="dt-result" hidden>
+  <div id="dt-result" class="result" hidden>
     <p id="dt-summary"></p>
-    <p id="dt-note"></p>
+    <p id="dt-note" class="hint-text"></p>
     <div id="dt-rows"></div>
   </div>
-  <p id="dt-err" hidden></p>
+  <p id="dt-err" class="error-text" hidden></p>
 
   <h2>読み取れる書き方</h2>
   <ul>
@@ -144,7 +112,7 @@
   1行に1つずつ日時を貼ると、指定した形式に全部まとめて変換します。スプレッドシートの1列をそのまま貼る用途向けです。<br>
   読み取れなかった行は <code>【変換できません】</code> を付けてそのまま残すので、行数と並び順はズレません。
 
-  <div id="bulk-bar">
+  <div class="option-row">
     <label>出力形式
       <select id="bulk-fmt"></select>
     </label>
@@ -568,7 +536,7 @@
       lab.className = "dt-label";
       lab.textContent = f.label;
       var val = document.createElement("code");
-      val.className = "dt-val";
+      val.className = "output dt-val";
       val.textContent = f.v;
       var btn = document.createElement("button");
       btn.type = "button";

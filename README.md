@@ -1,6 +1,6 @@
-# tools
+# Hello! Tools
 
-ブラウザだけで完結する小さなウェブツール置き場。Cloudflare Pages でホストする（ビルド不要の静的サイト）。
+ブラウザだけで完結する小さなウェブツール置き場。Cloudflare Workers で配信する静的サイト（https://tools.yxmxgxn.workers.dev/）。
 
 ## 構成
 

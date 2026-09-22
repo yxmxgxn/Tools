@@ -9,6 +9,9 @@
   --muted: #666;
   --line: #e5e5e5;
   --code-bg: #f5f5f5;
+  --danger: #c0392b;
+  --radius: 4px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,19 +45,17 @@ code {
 }
 
 /* 共通ヘッダー / フッター
+   各ツールはそれだけで完結したページなので、ヘッダーは帯にせず、
+   右上にトップへのリンクを小さく置くだけにして本題をすぐ始める
 -------------------------------------*/
-.site-header { border-bottom: 1px solid var(--line); }
 .site-header .wrap,
 .site-footer .wrap {
   max-width: 760px;
   margin: 0 auto;
   padding: 0.8rem 1rem;
 }
-.site-header .brand {
-  font-weight: 700;
-  color: var(--fg);
-  font-size: 1.05rem;
-}
+.site-header .wrap { display: flex; justify-content: flex-end; padding-bottom: 0; }
+.site-header .brand { font-size: 13px; color: var(--muted); }
 .site-footer {
   border-top: 1px solid var(--line);
   color: var(--muted);
@@ -66,12 +67,100 @@ code {
 main {
   max-width: 760px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 2rem;
+  padding: 0 1rem 2rem;
 }
 
-h1 { font-size: 2rem; margin: 0 0 0.75rem; }
-h2 { font-size: 1.4rem; font-weight: normal; margin: 1.75rem 0 0.5rem; }
+/* ヘッダーのないページ(トップページ)は、見出しが上端に付かないよう余白を取る */
+body > main:first-child { padding-top: 1.5rem; }
+
+h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
+h2 { font-size: 1.4rem; font-weight: normal; margin: 1.5rem 0 0.5rem; }
 h3 { font-size: 1rem; font-weight: normal; margin: 0 0 0.5rem; }
+
+/* フォーム部品
+   各ツールで同じ見た目にするため、ここで一度だけ決める。
+   ページ側で書くのは、そのツールならではの大きさや並びだけにする
+-------------------------------------*/
+/* フォーム部品は font を継承しないので、本文と同じフォントにそろえる */
+input, textarea, select, button { font: inherit; }
+
+input[type="text"],
+input[type="url"],
+input[type="search"],
+input[type="number"],
+textarea,
+select {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+}
+textarea { width: 100%; line-height: 1.6; resize: vertical; }
+
+button {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] { accent-color: var(--accent); }
+
+/* 主役のボタン(検索を開く・ブックマークレットなど)。<a> にも <button> にも使う */
+.button-primary {
+  display: inline-block;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff !important;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.button-primary:hover { opacity: 0.85; }
+
+/* ツールの部品
+-------------------------------------*/
+/* 入力欄とボタンを横に並べる行。入力欄が残りの幅を取る */
+.input-row { display: flex; gap: 10px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; }
+.input-row > input { flex: 1; min-width: 100px; }
+
+/* チェックボックスやセレクトを並べる行 */
+.option-row { display: flex; gap: 14px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
+.option-row label { display: flex; align-items: center; gap: 4px; }
+
+/* 結果のまとまり。結果の表示欄と、その横のコピーボタン。その下に主役のボタンを置ける */
+.result { margin: 1em 0; }
+.output-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.output-row + .button-primary { margin-top: 0.75em; }
+.output-row > .output { flex: 1; min-width: 200px; }
+.output {
+  padding: 8px 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.error-text { color: var(--danger); font-size: 14px; }
+.hint-text { color: var(--muted); font-size: 13px; }
+.mono { font-family: var(--mono); }
+
+/* ブックマークレットのボタンと「コードをコピー」を並べる行 */
+.bookmarklet { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0.75em 0; }
+
+/* 1ページに複数のツールがあるときの区切り */
+hr.tool-sep { border: none; border-top: 1px solid var(--line); margin: 2.5rem 0 0; }
 
 /* トップページのツール一覧カード
 -------------------------------------*/

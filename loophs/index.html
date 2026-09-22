@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LoopHS 9-Step L</title>
+<title>LoopHS（色相環＋9段階L） | Hello! Tools</title>
+<meta name="description" content="色相環をクリック＋明度9段階で色を選び、8RGB／HEXに変換するツールです。">
 <link rel="icon" href="/assets/glasses-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
 <meta property="og:title" content="Loop Hue Saturation 9 Step Lightness Color Space Specification Method">
 <meta property="og:image" content="https://yxmxgxn.github.io/8RGBSpecification/LoopHS.png">
 <meta property="og:url" content="https://tools.yxmxgxn.workers.dev/loophs/">
@@ -13,81 +15,44 @@
 <meta name="twitter:image" content="https://yxmxgxn.github.io/8RGBSpecification/LoopHS.png">
 <meta name="twitter:creator" content="@yxmxgxn">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: #fff;
-    color: #111;
-    font-family: 'Noto Sans JP', sans-serif;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .container { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-  h1 { font-size: 14px; letter-spacing: 0.15em; color: #888; text-transform: uppercase; }
+  .container { max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
 
   .wheel-wrap { position: relative; width: 300px; height: 300px; }
   canvas { display: block; cursor: crosshair; }
-
   .center-label {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
   }
-
   .code-val {
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    pointer-events: all;
-    padding: 2px 6px;
-    border-radius: 3px;
-    transition: opacity 0.1s;
+    font-size: 16px; font-weight: 700; cursor: pointer; pointer-events: all;
+    padding: 2px 6px; border-radius: 3px;
   }
-  .code-val:hover { opacity: 0.6; }
-  .code-8rgb { color: #111; }
-  .code-hex { color: #555; font-size: 14px; }
+  .code-val:hover { color: var(--accent); }
+  .code-hex { color: var(--muted); font-size: 14px; }
 
   /* Lスライダー */
-  .l-row {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .l-label { font-size: 15px; font-weight: 700; color: #888; width: 16px; }
+  .l-row { width: 100%; display: flex; align-items: center; gap: 10px; }
+  .l-label { font-size: 15px; font-weight: 700; color: var(--muted); width: 16px; }
   .l-steps { display: flex; gap: 3px; flex: 1; }
-  .l-btn {
-    flex: 1;
-    height: 28px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 9px;
-    transition: all 0.1s;
-    background: #f5f5f5;
-  }
-  .l-btn:hover { border-color: #999; }
-  .l-btn.active { border: 2px solid #111; }
+  /* 背景色はスクリプトが各段の明るさで塗る */
+  .l-btn { flex: 1; height: 28px; padding: 0; border-radius: 3px; font-size: 9px; transition: all 0.1s; }
+  .l-btn.active { border: 2px solid var(--fg); }
   .l-val { font-size: 16px; font-weight: 700; width: 20px; text-align: center; }
-
-  .footer { font-size: 14px; color: #aaa; text-align: center; }
+  #hsl-display { font-size: 13px; color: var(--muted); text-align: center; width: 100%; }
 </style>
 </head>
 <body>
-<a href="/" style="position:fixed;top:12px;left:14px;font-size:13px;color:#888;text-decoration:none;z-index:10;">← Tools</a>
-<div class="container">
-  <h1>Loop HS 9 Step L Specification</h1>
 
-  <div class="wheel-wrap">
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <h1>LoopHS（色相環＋9段階L）</h1>
+  <p>色相環をクリックして色を選び、明度(L)を9段階で調整します。8RGB・HEXのコードはクリックでコピーできます。</p>
+  <div class="container">
+<div class="wheel-wrap">
     <canvas id="wheel" width="300" height="300"></canvas>
     <div class="center-label">
       <span class="code-val code-8rgb" id="code8rgb">#$000</span>
@@ -101,9 +66,13 @@
     <span class="l-val" id="l-val">4</span>
   </div>
 
-  <div class="hsl-display" id="hsl-display" style="font-size:13px;color:#888;text-align:center;width:100%;"></div>
-  <div class="footer">色相環をクリックで選択 · L で明度調整<br><a href="https://x.com/yxmxgxn" target="_blank" style="color:#aaa;">@yxmxgxn</a></div>
-</div>
+  <div id="hsl-display"></div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
 
 <script>
   const canvas = document.getElementById('wheel');

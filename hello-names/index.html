@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>ハロメン名前ピック | Tools</title>
+<title>ハロメン名前ピック | Hello! Tools</title>
 <meta name="description" content="記事の文章を貼るだけで、ハロー！プロジェクトのメンバー名を拾い出して重複を除き、スプレッドシートに貼れる形にします。ブックマークレット版つき。">
 <meta name="robots" content="noindex">
 
@@ -12,24 +12,12 @@
 <link rel="stylesheet" href="/assets/common.css">
 
 <style>
-  #hn-in {
-    width: 100%; min-height: 180px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px;
-    background: var(--bg); color: var(--fg); font-size: 14px; line-height: 1.6; resize: vertical; font-family: inherit;
-  }
+  #hn-in { min-height: 180px; padding: 8px 10px; }
   #hn-bar { display: flex; gap: 10px 18px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
   .hn-seg { display: inline-flex; align-items: center; gap: 6px; }
   .hn-seg-label { color: var(--muted); font-size: 13px; }
-  .hn-seg button {
-    padding: 5px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 13px; border-radius: 4px;
-  }
+  .hn-seg button { padding: 5px 10px; font-size: 13px; }
   .hn-seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-  .hn-btn {
-    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 14px; border-radius: 4px;
-  }
-  .hn-btn:hover, .hn-seg button:hover { border-color: var(--accent); }
-  #hn-status { font-size: 13px; color: var(--muted); }
   #hn-list { list-style: none; padding: 0; margin: 0.5rem 0; display: flex; flex-wrap: wrap; gap: 6px; }
   #hn-list label {
     display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
@@ -37,24 +25,19 @@
   }
   #hn-list input:not(:checked) + span { color: var(--muted); text-decoration: line-through; }
   #hn-list small { color: var(--muted); font-size: 12px; }
-  #hn-out {
-    width: 100%; min-height: 90px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px;
-    background: var(--code-bg); color: var(--fg); font-size: 13px; line-height: 1.6; resize: vertical;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
+  #hn-out { min-height: 90px; padding: 8px 10px; background: var(--code-bg); font-size: 13px; font-family: var(--mono); }
   #hn-bm {
-    display: inline-block; padding: 6px 14px; border: 1px dashed var(--accent); border-radius: 4px;
+    display: inline-block; padding: 6px 14px; border: 1px dashed var(--accent); border-radius: var(--radius);
     font-size: 14px; text-decoration: none; cursor: grab;
   }
   #hn-bm[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
-  .hn-note { font-size: 13px; color: var(--muted); }
 </style>
 </head>
 
 <body>
 
 <header class="site-header">
-  <div class="wrap"><a class="brand" href="/">Tools</a></div>
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
 </header>
 
 <main>
@@ -62,7 +45,7 @@
   文章を貼ると、<strong>ハロプロメンバーの名前を拾って重複を消し</strong>、コピーできます。<br>
   名前の間のスペースや、<code>山崎夢羽</code>のような旧字違いも拾います。
 
-  <p id="hn-status">メンバー一覧を読み込み中…</p>
+  <p id="hn-status" class="hint-text">メンバー一覧を読み込み中…</p>
 
   <textarea id="hn-in" placeholder="ここに記事の本文を貼る（ページ全体をCtrl+A→Ctrl+Cで丸ごとでOK）"></textarea>
 
@@ -88,7 +71,7 @@
 
   <ul id="hn-list"></ul>
   <textarea id="hn-out" readonly></textarea>
-  <p class="hn-note">
+  <p class="hint-text">
     名前の横の数字は本文に出てきた回数です。一言触れられただけの人は、チェックを外すと出力から消えます。<br>
     メンバー順は、管理人が独自に決めたハロプロメンバー一覧の順番です（公式の並びではありません）。<br>
     加入順はハロプロに加入した順（複数グループに所属した人は最初の加入）で、同じ日ならメンバー順です。記事順は本文に最初に出てきた順です。
@@ -100,7 +83,7 @@
     文字を選択してから押すと、選択した部分だけから拾います（関連記事やサイドバーの名前を拾いたくないとき）。
   </p>
   <p><a id="hn-bm" href="#" aria-disabled="true">ハロメンピック</a></p>
-  <p class="hn-note">
+  <p class="hint-text">
     メンバー一覧はブックマークレットの中に入っています。新しいメンバーが入ったら、このページを開き直してドラッグし直してください。
   </p>
 </main>

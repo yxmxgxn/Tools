@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>YouTube URL整形（タイムスタンプは残す） | Tools</title>
+<title>YouTube URL整形（タイムスタンプは残す） | Hello! Tools</title>
 <meta name="description" content="YouTubeのURLから共有トラッキング(si=)やプレイリストなどの余計なパラメータを消して整形します。再生開始位置(t=)だけは残します。ブックマークレットあり。">
 
 <meta property="og:title" content="YouTube URL整形（タイムスタンプは残す）">
@@ -27,71 +27,12 @@
 }
 </script>
 
-<style>
-  #yt-controls { display: flex; gap: 10px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; }
-  #yt-controls input[type="text"] {
-    flex: 1; min-width: 100px; padding: 6px 10px;
-    border: 1px solid var(--line); font-size: 14px; background: var(--bg); color: var(--fg);
-  }
-  #yt-options { display: flex; gap: 14px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; font-size: 14px; }
-  #yt-options label { display: flex; align-items: center; gap: 4px; }
-  #yt-result { margin: 1em 0; }
-  #yt-cmd-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  #yt-out {
-    flex: 1; min-width: 200px; padding: 8px 12px;
-    background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px;
-    font-size: 13px; word-break: break-all;
-  }
-  #yt-copy {
-    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 14px; border-radius: 4px;
-  }
-  #yt-open {
-    display: inline-block; margin-top: 0.75em; padding: 8px 16px;
-    background: var(--accent); border-radius: 4px; color: #fff !important;
-    text-decoration: none; font-size: 14px;
-  }
-  #yt-err { color: #c0392b; font-size: 14px; }
-  .yt-bml { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0.75em 0; }
-  .yt-bml-link {
-    display: inline-block; padding: 8px 16px; background: var(--accent);
-    border-radius: 4px; color: #fff !important; text-decoration: none; font-size: 14px;
-  }
-  .yt-bml-copy {
-    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 14px; border-radius: 4px;
-  }
-
-  #gen-controls { display: flex; gap: 10px; margin: 0.75rem 0; flex-wrap: wrap; align-items: center; }
-  #gen-controls input[type="text"] {
-    flex: 1; min-width: 100px; padding: 6px 10px;
-    border: 1px solid var(--line); font-size: 14px; background: var(--bg); color: var(--fg);
-  }
-  #gen-result { margin: 1em 0; }
-  #gen-cmd-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  #gen-out {
-    flex: 1; min-width: 200px; padding: 8px 12px;
-    background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px;
-    font-size: 13px; word-break: break-all;
-  }
-  #gen-copy {
-    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
-    cursor: pointer; font-size: 14px; border-radius: 4px;
-  }
-  #gen-open {
-    display: inline-block; margin-top: 0.75em; padding: 8px 16px;
-    background: var(--accent); border-radius: 4px; color: #fff !important;
-    text-decoration: none; font-size: 14px;
-  }
-  #gen-err { color: #c0392b; font-size: 14px; }
-  hr.tool-sep { border: none; border-top: 1px solid var(--line); margin: 2.5rem 0 0; }
-</style>
 </head>
 
 <body>
 
 <header class="site-header">
-  <div class="wrap"><a class="brand" href="/">Tools</a></div>
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
 </header>
 
 <main>
@@ -99,29 +40,29 @@
   YouTubeのURLから、共有トラッキング(<code>si=</code>)やプレイリストなどの余計なパラメータを消して整形します。<br>
   よくある「URLをきれいにするやつ」と違い、<strong>再生開始位置(<code>t=</code>)だけは残します</strong>。「この瞬間から見て」を保ったまま共有できます。<br>
 
-  <div id="yt-controls">
+  <div class="input-row">
     <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=xxxx&t=90s&si=..." autocomplete="off">
   </div>
 
-  <div id="yt-options">
+  <div class="option-row">
     <label><input type="checkbox" id="yt-short"> 短縮URL(youtu.be)にする</label>
     <label><input type="checkbox" id="yt-notime"> 時間指定(t=)を消す</label>
   </div>
 
-  <div id="yt-result" hidden>
-    <div id="yt-cmd-row">
-      <code id="yt-out"></code>
+  <div id="yt-result" class="result" hidden>
+    <div class="output-row">
+      <code id="yt-out" class="output"></code>
       <button id="yt-copy" type="button">コピー</button>
     </div>
-    <a id="yt-open" target="_blank" rel="noopener noreferrer">整形後のURLを開く</a>
+    <a id="yt-open" class="button-primary" target="_blank" rel="noopener noreferrer">整形後のURLを開く</a>
   </div>
-  <p id="yt-err" hidden></p>
+  <p id="yt-err" class="error-text" hidden></p>
 
   <h2>ブックマークレット</h2>
   YouTubeの動画ページで実行すると、いま開いている動画の整形済みURL(<code>t=</code>付き)をクリップボードにコピーします。<br>
   PCでは下のボタンをブックマークバーにドラッグして登録してください。スマホでは「コードをコピー」して、適当なページをブックマークしてから編集でURL欄に貼り付けてください。
-  <div class="yt-bml">
-    <a class="yt-bml-link" href="javascript:(function(){function s(t){if(!t)return 0;if(/^\d+s?$/.test(t))return parseInt(t,10);var m=t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);return m?(+(m[1]||0))*3600+(+(m[2]||0))*60+(+(m[3]||0)):0}try{var u=new URL(location.href),h=u.hostname.replace(/^(www|m|music)\./,''),id='',p=u.pathname;if(h=='youtu.be')id=p.slice(1).split('/')[0];else if(h=='youtube.com'){if(p=='/watch')id=u.searchParams.get('v')||'';else{var m=p.match(/^\/(?:shorts|live|embed|v)\/([^\/?#]+)/);if(m)id=m[1]}}if(!id){alert('YouTubeの動画ページで実行してください');return}var sec=s(u.searchParams.get('t')||u.searchParams.get('start')||''),o='https://www.youtube.com/watch?v='+id+(sec>0?'&t='+sec+'s':'');navigator.clipboard.writeText(o).then(function(){alert('コピーしました:\n'+o)},function(){prompt('コピーしてください',o)})}catch(e){alert('URLを解析できませんでした')}})();">YouTube URLをコピー</a>
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){function s(t){if(!t)return 0;if(/^\d+s?$/.test(t))return parseInt(t,10);var m=t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);return m?(+(m[1]||0))*3600+(+(m[2]||0))*60+(+(m[3]||0)):0}try{var u=new URL(location.href),h=u.hostname.replace(/^(www|m|music)\./,''),id='',p=u.pathname;if(h=='youtu.be')id=p.slice(1).split('/')[0];else if(h=='youtube.com'){if(p=='/watch')id=u.searchParams.get('v')||'';else{var m=p.match(/^\/(?:shorts|live|embed|v)\/([^\/?#]+)/);if(m)id=m[1]}}if(!id){alert('YouTubeの動画ページで実行してください');return}var sec=s(u.searchParams.get('t')||u.searchParams.get('start')||''),o='https://www.youtube.com/watch?v='+id+(sec>0?'&t='+sec+'s':'');navigator.clipboard.writeText(o).then(function(){alert('コピーしました:\n'+o)},function(){prompt('コピーしてください',o)})}catch(e){alert('URLを解析できませんでした')}})();">YouTube URLをコピー</a>
     <button type="button" class="yt-bml-copy">コードをコピー</button>
   </div>
 
@@ -132,34 +73,34 @@
   機能に必要なパラメータを壊さないよう、<strong>既知のトラッキング用パラメータだけ</strong>を消して、それ以外はそのまま残します。<br>
   <strong>Amazon</strong> のURLだけは特別扱いで、商品ID(ASIN)だけを抜いた最短形 <code>amazon.co.jp/dp/ASIN</code> にします。<br>
 
-  <div id="gen-controls">
+  <div class="input-row">
     <input type="text" id="gen-url" placeholder="https://example.com/page?utm_source=...&fbclid=..." autocomplete="off">
   </div>
 
-  <div id="yt-options">
+  <div class="option-row">
     <label><input type="checkbox" id="gen-all"> すべてのクエリ(?以降)を消す（強力モード）</label>
   </div>
 
-  <div id="gen-result" hidden>
-    <div id="gen-cmd-row">
-      <code id="gen-out"></code>
+  <div id="gen-result" class="result" hidden>
+    <div class="output-row">
+      <code id="gen-out" class="output"></code>
       <button id="gen-copy" type="button">コピー</button>
     </div>
-    <a id="gen-open" target="_blank" rel="noopener noreferrer">整形後のURLを開く</a>
+    <a id="gen-open" class="button-primary" target="_blank" rel="noopener noreferrer">整形後のURLを開く</a>
   </div>
-  <p id="gen-err" hidden></p>
+  <p id="gen-err" class="error-text" hidden></p>
 
   <h2>ブックマークレット（汎用）</h2>
   YouTube以外のページで実行すると、そのページのURLからトラッキング用パラメータを除いたものをクリップボードにコピーします。
-  <div class="yt-bml">
-    <a class="yt-bml-link" href="javascript:(function(){var S=new Set(['fbclid','gclid','dclid','gbraid','wbraid','yclid','msclkid','mc_cid','mc_eid','igshid','igsh','si','ref_src','ref_url','spm','scm','mkt_tok','_hsenc','_hsmi','vero_id','vero_conv','oly_anon_id','oly_enc_id','__s','cmpid','ck_subscriber_id','twclid','ttclid','rb_clickid','_openstat']);try{var u=new URL(location.href),keep=[];if(/(^|\.)amazon\./i.test(u.hostname)){var am=u.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d|product)\/([A-Za-z0-9]{10})(?:[\/?]|$)/);if(am){var az='https://'+u.hostname+'/dp/'+am[1].toUpperCase();navigator.clipboard.writeText(az).then(function(){alert('コピーしました:\n'+az)},function(){prompt('コピーしてください',az)});return}}u.searchParams.forEach(function(v,k){var lk=k.toLowerCase();if(lk.indexOf('utm_')===0)return;if(S.has(lk))return;keep.push([k,v])});u.search='';keep.forEach(function(p){u.searchParams.append(p[0],p[1])});var o=u.toString();navigator.clipboard.writeText(o).then(function(){alert('コピーしました:\n'+o)},function(){prompt('コピーしてください',o)})}catch(e){alert('URLを解析できませんでした')}})();">URLをきれいにしてコピー</a>
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){var S=new Set(['fbclid','gclid','dclid','gbraid','wbraid','yclid','msclkid','mc_cid','mc_eid','igshid','igsh','si','ref_src','ref_url','spm','scm','mkt_tok','_hsenc','_hsmi','vero_id','vero_conv','oly_anon_id','oly_enc_id','__s','cmpid','ck_subscriber_id','twclid','ttclid','rb_clickid','_openstat']);try{var u=new URL(location.href),keep=[];if(/(^|\.)amazon\./i.test(u.hostname)){var am=u.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d|product)\/([A-Za-z0-9]{10})(?:[\/?]|$)/);if(am){var az='https://'+u.hostname+'/dp/'+am[1].toUpperCase();navigator.clipboard.writeText(az).then(function(){alert('コピーしました:\n'+az)},function(){prompt('コピーしてください',az)});return}}u.searchParams.forEach(function(v,k){var lk=k.toLowerCase();if(lk.indexOf('utm_')===0)return;if(S.has(lk))return;keep.push([k,v])});u.search='';keep.forEach(function(p){u.searchParams.append(p[0],p[1])});var o=u.toString();navigator.clipboard.writeText(o).then(function(){alert('コピーしました:\n'+o)},function(){prompt('コピーしてください',o)})}catch(e){alert('URLを解析できませんでした')}})();">URLをきれいにしてコピー</a>
     <button type="button" class="yt-bml-copy">コードをコピー</button>
   </div>
 
   <h2>ブックマークレット（強力モード）</h2>
   クエリ(<code>?</code>以降)をすべて消したものをコピーします。トラッキングが独自パラメータで残る場合はこちら。
-  <div class="yt-bml">
-    <a class="yt-bml-link" href="javascript:(function(){try{var u=new URL(location.href);u.search='';var o=u.toString();navigator.clipboard.writeText(o).then(function(){alert('コピーしました:\n'+o)},function(){prompt('コピーしてください',o)})}catch(e){alert('URLを解析できませんでした')}})();">クエリを全部消してコピー</a>
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){try{var u=new URL(location.href);u.search='';var o=u.toString();navigator.clipboard.writeText(o).then(function(){alert('コピーしました:\n'+o)},function(){prompt('コピーしてください',o)})}catch(e){alert('URLを解析できませんでした')}})();">クエリを全部消してコピー</a>
     <button type="button" class="yt-bml-copy">コードをコピー</button>
   </div>
 
