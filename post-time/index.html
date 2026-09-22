@@ -162,6 +162,11 @@
   </ul>
   表示される時刻は「IDが発行された瞬間」です。予約投稿や下書きからの投稿では、画面上の投稿日時と少しずれることがあります。<br>
   URLのアカウント名はURLに書いてある文字をそのまま出しています。Xはユーザー名の部分が違っていても同じ投稿が開けるため、改名前のURLや手で書き換えたURLでは実際の投稿者と一致しないことがあります。
+
+  <h2>ご注意</h2>
+  このツールは、各サービスが<strong>現時点で</strong>使っているIDの仕組みをもとに計算しています。仕組みは公式に公開されたものではなく、各サービスの都合で予告なく変わることがあります。<br>
+  表示される日時は目安です。正確さを保証するものではないので、確実な日時が必要なときは投稿そのものの表示で確認してください。<br>
+  IDに余計な文字が入っていたり、文字数が合わなかったりするURLはエラーにします。ただし、文字数が変わらないまま1文字だけ違う場合や、欠けた結果が昔の投稿としてありえる文字数になった場合(Instagramの10文字など)は見分けられず、別の日時として計算されます。
 </main>
 
 <footer class="site-footer">
@@ -175,10 +180,10 @@
   function $(id) { return document.getElementById(id); }
   function pad(n) { return String(n).padStart(2, "0"); }
 
-  // Instagramのショートコード(64進数)→メディアID。非公開投稿の長いコードも先頭11文字がID
+  // Instagramのショートコード(64進数)→メディアID
   function igCodeToId(code) {
     var n = 0n;
-    for (var i = 0; i < Math.min(code.length, 11); i++) {
+    for (var i = 0; i < code.length; i++) {
       var v = B64.indexOf(code[i]);
       if (v < 0) return null;
       n = n * 64n + BigInt(v);
@@ -187,13 +192,36 @@
   }
   function igIdToMs(id) { return Number((id >> 23n) + 1314220021721n); }
 
-  // 上から順に試す。parse は {user, ms} か {err} を返す
+  // IDの検査。大文字小文字の読み替えなどはせず、決まった半角文字と文字数だけを通す。
+  // 1文字増えたり欠けたり混ざったりしたURLで、もっともらしい別の日時を出してしまわないようにする
+  function checkId(id, ok, desc, lengths, lengthText) {
+    var bad = [];
+    for (var c of id) if (!ok.test(c) && bad.indexOf(c) < 0) bad.push(c);
+    if (bad.length) {
+      return { err: "IDに余計な文字が含まれています(「" + bad.join("」「") + "」)。" + desc + "。" };
+    }
+    if (lengths && lengths.indexOf(id.length) < 0) return lengthErr(id, lengthText);
+    return null;
+  }
+
+  function lengthErr(id, expected) {
+    return { err: "IDの文字数が合いません(" + id.length + "文字あります。" + expected + ")。URLが途中で欠けたり、余計な文字が混ざったりしていないか確認してください。" };
+  }
+
+  var DIGIT = /[0-9]/;
+  var IG_CHAR = /[A-Za-z0-9_-]/;
+
+  // 上から順に試す。parse は {user, ms} か {err} を返す。
+  // ID部分は区切り(/ ? #)まで丸ごと取り、使えない文字の手前で黙って切らないようにする
   var SERVICES = [
     {
       name: "X",
-      re: /(?:x|twitter)\.com\/([A-Za-z0-9_]+)\/status(?:es)?\/(\d+)/,
+      re: /(?:x|twitter)\.com\/([A-Za-z0-9_]+)\/status(?:es)?\/([^\/?#\s]+)/,
       profile: function (u) { return "https://x.com/" + u; },
       parse: function (m) {
+        var e = checkId(m[2], DIGIT, "Xのポストは半角数字だけです",
+          [15, 16, 17, 18, 19], "Xは19桁、2018年ごろまでの投稿は18桁");
+        if (e) return e;
         var id = BigInt(m[2]);
         if (id < 300000000000000n) return { err: "2010年11月以前のポストはIDに時刻が入っていないため計算できません。" };
         return {
@@ -205,45 +233,60 @@
     },
     {
       name: "Instagram",
-      re: /(?:instagram\.com|instagr\.am)\/stories\/([A-Za-z0-9._]+)\/(\d+)/,
+      re: /(?:instagram\.com|instagr\.am)\/stories\/([A-Za-z0-9._]+)\/([^\/?#\s]+)/,
       profile: function (u) { return "https://www.instagram.com/" + u + "/"; },
-      parse: function (m) { return { user: m[1], ms: igIdToMs(BigInt(m[2])) }; }
+      parse: function (m) {
+        var e = checkId(m[2], DIGIT, "ストーリーズのIDは半角数字だけです", [19], "ストーリーズは19桁");
+        if (e) return e;
+        return { user: m[1], ms: igIdToMs(BigInt(m[2])) };
+      }
     },
     {
       name: "Instagram",
-      re: /(?:instagram\.com|instagr\.am)\/(?:([A-Za-z0-9._]+)\/)?(?:p|reels?|tv)\/([A-Za-z0-9_-]+)/,
+      re: /(?:instagram\.com|instagr\.am)\/(?:([A-Za-z0-9._]+)\/)?(?:p|reels?|tv)\/([^\/?#\s]+)/,
       profile: function (u) { return "https://www.instagram.com/" + u + "/"; },
       parse: function (m) {
-        var id = igCodeToId(m[2]);
-        if (id === null) return { err: "投稿コードを読み取れませんでした。" };
+        var e = checkId(m[2], IG_CHAR, "Instagramのコードは半角英数字と - _ だけです",
+          [11, 10], "通常は11文字、2015年ごろまでの投稿は10文字。非公開アカウントの長いURLには対応していません");
+        if (e) return e;
+        var hints = [];
+        // 10文字は古い投稿として正しい長さなのでエラーにはできないが、最近の投稿から1文字欠けても10文字になる
+        if (m[2].length === 10) hints.push("10文字のコードは2015年ごろまでの投稿のものです。最近の投稿なら1文字欠けています。");
+        if (!m[1]) hints.push("アカウント名を出すには、投稿の日付部分のリンク(instagram.com/ユーザー名/reel/…)を貼ってください。");
         return {
           user: m[1] || null,
-          ms: igIdToMs(id),
-          hint: m[1] ? "" : "アカウント名を出すには、投稿の日付部分のリンク(instagram.com/ユーザー名/reel/…)を貼ってください。"
+          ms: igIdToMs(igCodeToId(m[2])),
+          hint: hints.join("")
         };
       }
     },
     {
       name: "TikTok",
-      re: /tiktok\.com\/@([A-Za-z0-9._]+)\/(?:video|photo)\/(\d+)/,
+      re: /tiktok\.com\/@([A-Za-z0-9._]+)\/(?:video|photo)\/([^\/?#\s]+)/,
       profile: function (u) { return "https://www.tiktok.com/@" + u; },
-      parse: function (m) { return { user: m[1], ms: Number(BigInt(m[2]) >> 32n) * 1000 }; }
+      parse: function (m) {
+        var e = checkId(m[2], DIGIT, "TikTokのIDは半角数字だけです", [19], "TikTokは19桁");
+        if (e) return e;
+        return { user: m[1], ms: Number(BigInt(m[2]) >> 32n) * 1000 };
+      }
     },
     {
       name: "Threads",
-      re: /threads\.(?:net|com)\/@([A-Za-z0-9._]+)\/post\/([A-Za-z0-9_-]+)/,
+      re: /threads\.(?:net|com)\/@([A-Za-z0-9._]+)\/post\/([^\/?#\s]+)/,
       profile: function (u) { return "https://www.threads.com/@" + u; },
       parse: function (m) {
-        var id = igCodeToId(m[2]);
-        if (id === null) return { err: "投稿コードを読み取れませんでした。" };
-        return { user: m[1], ms: igIdToMs(id) };
+        var e = checkId(m[2], IG_CHAR, "Threadsのコードは半角英数字と - _ だけです", [11], "Threadsは11文字");
+        if (e) return e;
+        return { user: m[1], ms: igIdToMs(igCodeToId(m[2])) };
       }
     },
     {
       name: "Bluesky",
-      re: /bsky\.app\/profile\/([^\/\s?#]+)\/post\/([a-z2-7]{13})/,
+      re: /bsky\.app\/profile\/([^\/\s?#]+)\/post\/([^\/?#\s]+)/,
       profile: function (u) { return "https://bsky.app/profile/" + u; },
       parse: function (m) {
+        var e = checkId(m[2], /[a-z2-7]/, "Blueskyの投稿IDは半角の小文字 a〜z と数字 2〜7 だけです", [13], "Blueskyは13文字");
+        if (e) return e;
         // TID: base32-sortable 13文字。10ビット右にずらすとUNIXマイクロ秒
         var n = 0n;
         for (var i = 0; i < 13; i++) n = n * 32n + BigInt(B32.indexOf(m[2][i]));
@@ -252,20 +295,26 @@
     },
     {
       name: "Misskey",
-      re: /https?:\/\/([^\/\s]+)\/notes\/([0-9a-zA-Z]+)/,
+      re: /https?:\/\/([^\/\s]+)\/notes\/([^\/?#\s]+)/,
       profile: null,
       parse: function (m) {
+        var e = checkId(m[2], /[0-9a-z]/, "MisskeyのノートIDは半角の小文字英字と数字だけです");
+        if (e) return e;
         var ms = misskeyIdToMs(m[2]);
-        if (ms === null) return { err: "このサーバーのノートIDの形式には対応していません。" };
+        if (ms === null) return lengthErr(m[2], "Misskeyは10・16・24・26文字のどれか");
         return { user: null, ms: ms, hint: "MisskeyのURLにはアカウント名が含まれません(サーバー: " + m[1] + ")。" };
       }
     },
     {
-      // Mastodon系。サーバーごとにドメインが違うので /@ユーザー名/数字 の形で見分ける
+      // Mastodon系。サーバーごとにドメインが違うので /@ユーザー名/数字… の形で見分ける
+      // (数字で始まることを条件にして、YouTubeの /@チャンネル/videos などを拾わないようにする)
       name: "Mastodon",
-      re: /https?:\/\/([^\/\s]+)\/(?:@([A-Za-z0-9_]+(?:@[^\/\s]+)?)|users\/([A-Za-z0-9_]+)\/statuses)\/(\d+)/,
+      re: /https?:\/\/([^\/\s]+)\/(?:@([A-Za-z0-9_]+(?:@[^\/\s]+)?)|users\/([A-Za-z0-9_]+)\/statuses)\/(\d[^\/?#\s]*)/,
       profile: null,
       parse: function (m) {
+        var e = checkId(m[4], DIGIT, "Mastodonの投稿IDは半角数字だけです",
+          [18, 17], "Mastodonは18桁、2018年ごろまでの投稿は17桁。2017年より前の投稿は計算できません");
+        if (e) return e;
         var user = m[2] || m[3];
         return {
           user: user,
@@ -288,10 +337,10 @@
       // aid / aidx: 先頭8文字が 2000-01-01 からのミリ秒(36進数)
       return parseInt(id.slice(0, 8), 36) + 946684800000;
     }
-    if (/^[0-9A-Z]{26}$/i.test(id)) {
-      // ulid: 先頭10文字がUNIXミリ秒(Crockford base32)
-      var C = "0123456789ABCDEFGHJKMNPQRSTVWXYZ", n = 0;
-      for (var i = 0; i < 10; i++) n = n * 32 + C.indexOf(id[i].toUpperCase());
+    if (/^[0-9a-hjkmnp-tv-z]{26}$/.test(id)) {
+      // ulid: 先頭10文字がUNIXミリ秒(Crockford base32。Misskeyは小文字で出す)
+      var C = "0123456789abcdefghjkmnpqrstvwxyz", n = 0;
+      for (var i = 0; i < 10; i++) n = n * 32 + C.indexOf(id[i]);
       return n;
     }
     if (/^[0-9a-f]{24}$/.test(id)) {
@@ -452,7 +501,14 @@
       li.appendChild(tl);
 
       if (r.hint) li.appendChild(el("div", "pt-hint", r.hint));
-      li.appendChild(el("div", "pt-url", line));
+      // 貼られたURLから投稿へ飛べるようにする。https:// 抜きで貼られても開けるよう補う
+      var post = el("a", null, line);
+      post.href = /^https?:\/\//.test(line) ? line : "https://" + line.replace(/^\/+/, "");
+      post.target = "_blank";
+      post.rel = "noopener noreferrer";
+      var urlLine = el("div", "pt-url");
+      urlLine.appendChild(post);
+      li.appendChild(urlLine);
       list.appendChild(li);
     });
   }
