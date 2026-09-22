@@ -60,6 +60,23 @@
   .pt-url { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 0.3rem; }
   .pt-hint { font-size: 13px; color: var(--muted); margin-top: 0.3rem; }
   .pt-err { color: #c0392b; font-size: 14px; }
+  #pt-format {
+    display: flex; gap: 14px; margin: 0 0 0.75rem;
+    flex-wrap: wrap; align-items: center; font-size: 14px;
+  }
+  #pt-format label { display: flex; align-items: center; gap: 4px; }
+  #pt-format label.pt-off { color: var(--muted); }
+  #pt-preset {
+    padding: 6px 10px; border: 1px solid var(--line); font-size: 14px; margin-left: 6px;
+    background: var(--bg); color: var(--fg);
+  }
+  #pt-custom-box { margin: 0 0 0.75rem; }
+  #pt-custom {
+    width: 100%; max-width: 320px; padding: 6px 10px;
+    border: 1px solid var(--line); font-size: 14px;
+    background: var(--bg); color: var(--fg);
+  }
+  .pt-legend { font-size: 12px; color: var(--muted); margin-top: 0.3rem; }
   .pt-bml {
     display: flex; gap: 10px; align-items: center;
     flex-wrap: wrap; margin: 0.75em 0;
@@ -87,6 +104,26 @@
   URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。1行に1つずつ、複数まとめて貼れます。
 
   <textarea id="pt-url" placeholder="https://x.com/ユーザー名/status/0000000000&#10;https://www.instagram.com/p/XXXXXXXXXXX/&#10;https://www.tiktok.com/@ユーザー名/video/0000000000" autocomplete="off" spellcheck="false"></textarea>
+
+  <div id="pt-format">
+    <label>表示形式
+      <select id="pt-preset">
+        <option value="slash">2026/09/22 13:51:14</option>
+        <option value="hyphen">2026-09-22 13:51:14</option>
+        <option value="kanji">2026年9月22日 13:51</option>
+        <option value="custom">自分で決める</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="pt-dateonly"> 日付のみ</label>
+    <label><input type="checkbox" id="pt-weekday"> 曜日</label>
+  </div>
+  <div id="pt-custom-box" hidden>
+    <input type="text" id="pt-custom" value="YYYY/MM/DD HH:mm:ss" autocomplete="off" spellcheck="false">
+    <div class="pt-legend">
+      <code>YYYY</code> 年(4桁)・<code>YY</code> 年(2桁)・<code>MM</code> / <code>M</code> 月・<code>DD</code> / <code>D</code> 日・<code>HH</code> / <code>H</code> 時・<code>mm</code> 分・<code>ss</code> 秒・<code>ddd</code> 曜日(火)<br>
+      2文字のものは0埋め(09)、1文字のものは0埋めなし(9)。<code>[ ]</code> で囲んだ文字はそのまま出ます。
+    </div>
+  </div>
 
   <ul id="pt-list"></ul>
 
@@ -232,7 +269,11 @@
         var user = m[2] || m[3];
         return {
           user: user,
-          link: "https://" + m[1] + "/@" + user,
+          // 他サーバーのユーザー(名前@ドメイン)は本家に直接リンクする。
+          // 表示中のサーバー経由だとリダイレクトと「安全を確かめて」の確認画面を挟むため
+          link: user.indexOf("@") >= 0
+            ? "https://" + user.split("@")[1] + "/@" + user.split("@")[0]
+            : "https://" + m[1] + "/@" + user,
           ms: Number(BigInt(m[4]) >> 16n)
         };
       }
@@ -282,11 +323,72 @@
     return { err: "対応していないURLです。対応しているSNSの投稿URLを貼ってください。" };
   }
 
-  function formatJst(ms) {
+  // 表示形式のプリセット。日付・曜日・時刻を分けておき、チェックボックスで組み合わせる
+  var PRESETS = {
+    slash:  { date: "YYYY/MM/DD",   weekday: " (ddd)", time: " HH:mm:ss" },
+    hyphen: { date: "YYYY-MM-DD",   weekday: " (ddd)", time: " HH:mm:ss" },
+    kanji:  { date: "YYYY年M月D日", weekday: "(ddd)",  time: " HH:mm" }
+  };
+
+  function currentPattern() {
+    var preset = $("pt-preset").value;
+    if (preset === "custom") return $("pt-custom").value;
+    var p = PRESETS[preset];
+    return p.date + ($("pt-weekday").checked ? p.weekday : "") + ($("pt-dateonly").checked ? "" : p.time);
+  }
+
+  // 長いトークンを先に並べる(MM を M 2つと読まないように)。[ ] の中はそのまま出す
+  var TOKEN = /\[([^\]]*)\]|YYYY|YY|MM|M|DD|D|HH|H|mm|ss|ddd/g;
+
+  function formatJst(ms, pattern) {
     var d = new Date(ms + 9 * 3600 * 1000);
-    return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) +
-      " (" + WEEK[d.getUTCDay()] + ") " +
-      pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds());
+    var v = {
+      YYYY: String(d.getUTCFullYear()),
+      YY: String(d.getUTCFullYear()).slice(-2),
+      MM: pad(d.getUTCMonth() + 1), M: String(d.getUTCMonth() + 1),
+      DD: pad(d.getUTCDate()), D: String(d.getUTCDate()),
+      HH: pad(d.getUTCHours()), H: String(d.getUTCHours()),
+      mm: pad(d.getUTCMinutes()),
+      ss: pad(d.getUTCSeconds()),
+      ddd: WEEK[d.getUTCDay()]
+    };
+    return pattern.replace(TOKEN, function (t, literal) {
+      return literal !== undefined ? literal : v[t];
+    });
+  }
+
+  var STORE_KEY = "post-time-format";
+
+  function saveFormat() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        preset: $("pt-preset").value,
+        dateOnly: $("pt-dateonly").checked,
+        weekday: $("pt-weekday").checked,
+        custom: $("pt-custom").value
+      }));
+    } catch (e) {}
+  }
+
+  function loadFormat() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+      if (!s) return;
+      if (s.preset === "custom" || PRESETS[s.preset]) $("pt-preset").value = s.preset;
+      $("pt-dateonly").checked = !!s.dateOnly;
+      $("pt-weekday").checked = !!s.weekday;
+      if (typeof s.custom === "string" && s.custom) $("pt-custom").value = s.custom;
+    } catch (e) {}
+  }
+
+  // 「自分で決める」のときは書式がすべてを決めるので、チェックボックスは効かないことを見せる
+  function syncFormatUi() {
+    var custom = $("pt-preset").value === "custom";
+    $("pt-custom-box").hidden = !custom;
+    ["pt-dateonly", "pt-weekday"].forEach(function (id) {
+      $(id).disabled = custom;
+      $(id).parentNode.classList.toggle("pt-off", custom);
+    });
   }
 
   function ago(ms) {
@@ -307,6 +409,7 @@
   function render() {
     var list = $("pt-list");
     list.textContent = "";
+    var pattern = currentPattern();
     $("pt-url").value.split(/\s+/).filter(Boolean).forEach(function (line) {
       var r = analyze(line);
       var li = el("li", "pt-row");
@@ -334,7 +437,7 @@
       }
       li.appendChild(head);
 
-      var time = formatJst(r.ms);
+      var time = formatJst(r.ms, pattern);
       var tl = el("div", "pt-time-line");
       tl.appendChild(el("span", "pt-time", time));
       tl.appendChild(el("span", "pt-ago", ago(r.ms)));
@@ -355,6 +458,15 @@
   }
 
   $("pt-url").addEventListener("input", render);
+  ["pt-preset", "pt-dateonly", "pt-weekday", "pt-custom"].forEach(function (id) {
+    $(id).addEventListener(id === "pt-custom" ? "input" : "change", function () {
+      syncFormatUi();
+      saveFormat();
+      render();
+    });
+  });
+  loadFormat();
+  syncFormatUi();
 
   // ブックマークレットは、このページ自身のURLを指すよう動的生成(ホスト先が変わっても追従する)
   var toolUrl = location.origin + location.pathname;
