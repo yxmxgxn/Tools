@@ -138,7 +138,7 @@
   <h2>対応しているURL</h2>
   <ul>
     <li><strong>X</strong>：<code>x.com/ユーザー名/status/番号</code>(twitter.com も可)</li>
-    <li><strong>Instagram</strong>：<code>instagram.com/p/コード</code>・<code>/reel/コード</code>・<code>/reels/コード</code>・<code>/stories/ユーザー名/番号</code>(結果のリンクは、転送が起きない <code>/p/コード</code> で開きます)</li>
+    <li><strong>Instagram</strong>：<code>instagram.com/p/コード</code>・<code>/reel/コード</code>・<code>/reels/コード</code>・<code>/stories/ユーザー名/番号</code>(結果のリンクは <code>/i/p/コード</code> の形で開きます)</li>
     <li><strong>TikTok</strong>：<code>tiktok.com/@ユーザー名/video/番号</code>(<code>/photo/</code> も可)</li>
     <li><strong>Threads</strong>：<code>threads.com/@ユーザー名/post/コード</code>(threads.net も可)</li>
     <li><strong>Bluesky</strong>：<code>bsky.app/profile/ハンドル/post/コード</code></li>
@@ -146,7 +146,8 @@
     <li><strong>Mastodon</strong>：<code>サーバー/@ユーザー名/番号</code>(mstdn.jp 以外のサーバーも可)</li>
   </ul>
   MisskeyのURLにはアカウント名が含まれないため、日時だけを表示します。<br>
-  InstagramのURLはふつうアカウント名を含みません。投稿の<strong>日付部分のリンク</strong>をコピーすると <code>instagram.com/ユーザー名/reel/コード</code> の形になり、アカウント名も表示できます。<br>
+  InstagramのURLはふつうアカウント名を含みません。結果のリンク(<code>/i/p/コード</code>)を開くと、URLが <code>instagram.com/ユーザー名/p/コード</code> の形に書き換わるので、それを貼り直すとアカウント名も表示できます。投稿の日付部分のリンクをコピーしても同じ形になります。<br>
+  <code>/p/</code> の形で開くのは、<code>/reel/</code> や <code>/reels/</code> だとリールの連続再生画面に転送され、写真の投稿では別のリールに差し替わることがあるためです。<br>
   TikTokの短縮URL(<code>vm.tiktok.com/…</code>)やXの <code>t.co/…</code> は、一度ブラウザで開いて表示された長いURLを貼ってください。
 
   <h2>仕組み</h2>
@@ -255,13 +256,16 @@
         if (code.length === 10) hints.push("10文字のコードは2015年ごろまでの投稿のものです。最近の投稿なら1文字欠けています。");
         // /reels/ はリールの連続再生画面のURL。写真の投稿を開くと別のリールに差し替わり、URLのコードも変わる
         if (m[2] === "reels") hints.push("/reels/ のURLはリールの連続再生画面のものです。転送やスクロールで別の投稿のURLに変わっていることがあるので、リンクを開いて目的の投稿か確かめてください。");
-        if (!m[1]) hints.push("アカウント名を出すには、投稿の日付部分のリンク(instagram.com/ユーザー名/reel/…)を貼ってください。");
+        // /i/p/コード の i はXの /i/status/ と同じく名前の代わりの置き文字なので、アカウント名として扱わない
+        var user = m[1] && m[1] !== "i" ? m[1] : null;
+        if (!user) hints.push("リンクを開くとURLが投稿者の名前入り(instagram.com/ユーザー名/p/…)に書き換わります。それを貼り直すとアカウント名も表示できます。");
         return {
-          user: m[1] || null,
+          user: user,
           ms: igIdToMs(igCodeToId(code)),
           hint: hints.join(""),
-          // /reel/ や /reels/ は転送や差し替えが起きるので、投稿そのものを開ける /p/ に揃える
-          postUrl: "https://www.instagram.com/p/" + code + "/"
+          // /reel/ や /reels/ は転送や差し替えが起きるので、投稿そのものを開ける /p/ の形にする。
+          // 名前の部分を i にしておくと、開いたあとで正しい投稿者の名前入りURLに書き換わる
+          postUrl: "https://www.instagram.com/i/p/" + code + "/"
         };
       }
     },
