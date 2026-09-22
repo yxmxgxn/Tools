@@ -138,7 +138,7 @@
   <h2>対応しているURL</h2>
   <ul>
     <li><strong>X</strong>：<code>x.com/ユーザー名/status/番号</code>(twitter.com も可)</li>
-    <li><strong>Instagram</strong>：<code>instagram.com/p/コード</code>・<code>/reel/コード</code>・<code>/stories/ユーザー名/番号</code></li>
+    <li><strong>Instagram</strong>：<code>instagram.com/p/コード</code>・<code>/reel/コード</code>・<code>/reels/コード</code>・<code>/stories/ユーザー名/番号</code>(結果のリンクは、転送が起きない <code>/p/コード</code> で開きます)</li>
     <li><strong>TikTok</strong>：<code>tiktok.com/@ユーザー名/video/番号</code>(<code>/photo/</code> も可)</li>
     <li><strong>Threads</strong>：<code>threads.com/@ユーザー名/post/コード</code>(threads.net も可)</li>
     <li><strong>Bluesky</strong>：<code>bsky.app/profile/ハンドル/post/コード</code></li>
@@ -243,20 +243,25 @@
     },
     {
       name: "Instagram",
-      re: /(?:instagram\.com|instagr\.am)\/(?:([A-Za-z0-9._]+)\/)?(?:p|reels?|tv)\/([^\/?#\s]+)/,
+      re: /(?:instagram\.com|instagr\.am)\/(?:([A-Za-z0-9._]+)\/)?(p|reels?|tv)\/([^\/?#\s]+)/,
       profile: function (u) { return "https://www.instagram.com/" + u + "/"; },
       parse: function (m) {
-        var e = checkId(m[2], IG_CHAR, "Instagramのコードは半角英数字と - _ だけです",
+        var code = m[3];
+        var e = checkId(code, IG_CHAR, "Instagramのコードは半角英数字と - _ だけです",
           [11, 10], "通常は11文字、2015年ごろまでの投稿は10文字。非公開アカウントの長いURLには対応していません");
         if (e) return e;
         var hints = [];
         // 10文字は古い投稿として正しい長さなのでエラーにはできないが、最近の投稿から1文字欠けても10文字になる
-        if (m[2].length === 10) hints.push("10文字のコードは2015年ごろまでの投稿のものです。最近の投稿なら1文字欠けています。");
+        if (code.length === 10) hints.push("10文字のコードは2015年ごろまでの投稿のものです。最近の投稿なら1文字欠けています。");
+        // /reels/ はリールの連続再生画面のURL。写真の投稿を開くと別のリールに差し替わり、URLのコードも変わる
+        if (m[2] === "reels") hints.push("/reels/ のURLはリールの連続再生画面のものです。転送やスクロールで別の投稿のURLに変わっていることがあるので、リンクを開いて目的の投稿か確かめてください。");
         if (!m[1]) hints.push("アカウント名を出すには、投稿の日付部分のリンク(instagram.com/ユーザー名/reel/…)を貼ってください。");
         return {
           user: m[1] || null,
-          ms: igIdToMs(igCodeToId(m[2])),
-          hint: hints.join("")
+          ms: igIdToMs(igCodeToId(code)),
+          hint: hints.join(""),
+          // /reel/ や /reels/ は転送や差し替えが起きるので、投稿そのものを開ける /p/ に揃える
+          postUrl: "https://www.instagram.com/p/" + code + "/"
         };
       }
     },
@@ -298,11 +303,9 @@
       re: /https?:\/\/([^\/\s]+)\/notes\/([^\/?#\s]+)/,
       profile: null,
       parse: function (m) {
-        var e = checkId(m[2], /[0-9a-z]/, "MisskeyのノートIDは半角の小文字英字と数字だけです");
-        if (e) return e;
-        var ms = misskeyIdToMs(m[2]);
-        if (ms === null) return lengthErr(m[2], "Misskeyは10・16・24・26文字のどれか");
-        return { user: null, ms: ms, hint: "MisskeyのURLにはアカウント名が含まれません(サーバー: " + m[1] + ")。" };
+        var r = misskeyIdToMs(m[2]);
+        if (r.err) return r;
+        return { user: null, ms: r.ms, hint: "MisskeyのURLにはアカウント名が含まれません(サーバー: " + m[1] + ")。" };
       }
     },
     {
@@ -331,26 +334,41 @@
 
   var B32 = "234567abcdefghijklmnopqrstuvwxyz";
 
-  // Misskeyはサーバー設定でID形式が違う。長さと文字種で見分ける
+  // Misskeyはサーバー設定でID形式が違う。文字数で形式を決め、その形式の文字だけを通す。
+  // 2026-09 に各形式のサーバーの公開タイムラインで createdAt と突き合わせ、ミリ秒まで一致を確認済み
+  // (aid: misskey.dev / aidx: misskey.io / ulid: nijimiss.moe / 24文字: misskey.m544.net)
   function misskeyIdToMs(id) {
-    if (/^[0-9a-z]{10}$/.test(id) || /^[0-9a-z]{16}$/.test(id)) {
+    var e;
+    if (id.length === 10 || id.length === 16) {
       // aid / aidx: 先頭8文字が 2000-01-01 からのミリ秒(36進数)
-      return parseInt(id.slice(0, 8), 36) + 946684800000;
+      e = checkId(id, /[0-9a-z]/, "この形式のノートIDは半角の小文字英字と数字だけです");
+      return e || { ms: parseInt(id.slice(0, 8), 36) + 946684800000 };
     }
-    if (/^[0-9a-hjkmnp-tv-z]{26}$/.test(id)) {
-      // ulid: 先頭10文字がUNIXミリ秒(Crockford base32。Misskeyは小文字で出す)
-      var C = "0123456789abcdefghjkmnpqrstvwxyz", n = 0;
+    if (id.length === 26) {
+      // ulid: 先頭10文字がUNIXミリ秒(Crockford base32。大文字で、I L O U は使わない)
+      e = checkId(id, /[0-9A-HJKMNP-TV-Z]/, "この形式(ulid)のノートIDは半角の大文字英字と数字だけです(I・L・O・U は使いません)");
+      if (e) return e;
+      var C = "0123456789ABCDEFGHJKMNPQRSTVWXYZ", n = 0;
       for (var i = 0; i < 10; i++) n = n * 32 + C.indexOf(id[i]);
-      return n;
+      return { ms: n };
     }
-    if (/^[0-9a-f]{24}$/.test(id)) {
-      // meid は先頭が8以上(ミリ秒に 0x800000000000 を足してある)、objectid は先頭8桁がUNIX秒
-      return parseInt(id[0], 16) >= 8
-        ? parseInt(id.slice(0, 12), 16) - 0x800000000000
-        : parseInt(id.slice(0, 8), 16) * 1000;
+    if (id.length === 24) {
+      // meid系は「目印1文字 + 11桁の16進ミリ秒」(目印は 7・8・g など)、objectid は先頭8桁がUNIX秒。
+      // 目印の文字は実装によって違うので決め打ちせず、両方計算してありえる日時になる方を採る
+      e = checkId(id, /[0-9a-g]/, "この形式のノートIDは半角の 0〜9 と a〜g だけです")
+        || checkId(id.slice(1), /[0-9a-f]/, "この形式のノートIDは、先頭以外は半角の 0〜9 と a〜f だけです");
+      if (e) return e;
+      var meid = parseInt(id.slice(1, 12), 16);
+      var objectid = /^[0-9a-f]+$/.test(id) ? parseInt(id.slice(0, 8), 16) * 1000 : NaN;
+      if (plausible(meid)) return { ms: meid };
+      if (plausible(objectid)) return { ms: objectid };
+      return { err: "IDから日時を計算できませんでした(想定外の形式です)。" };
     }
-    return null;
+    return checkId(id, /[0-9A-Za-z]/, "MisskeyのノートIDは半角英数字だけです")
+      || lengthErr(id, "Misskeyは10・16・24・26文字のどれか");
   }
+
+  function plausible(ms) { return ms >= Date.UTC(2006, 0, 1) && ms <= Date.now() + 86400000; }
 
   var SHORT_LINK = /(?:vm|vt)\.tiktok\.com\/|tiktok\.com\/t\/|t\.co\//;
 
@@ -364,7 +382,7 @@
       if (!m) continue;
       var r = s.parse(m);
       r.service = s;
-      if (!r.err && (r.ms < Date.UTC(2006, 0, 1) || r.ms > Date.now() + 86400000)) {
+      if (!r.err && !plausible(r.ms)) {
         r.err = "IDから日時を計算できませんでした(想定外の形式です)。";
       }
       return r;
@@ -503,7 +521,7 @@
       if (r.hint) li.appendChild(el("div", "pt-hint", r.hint));
       // 貼られたURLから投稿へ飛べるようにする。https:// 抜きで貼られても開けるよう補う
       var post = el("a", null, line);
-      post.href = /^https?:\/\//.test(line) ? line : "https://" + line.replace(/^\/+/, "");
+      post.href = r.postUrl || (/^https?:\/\//.test(line) ? line : "https://" + line.replace(/^\/+/, ""));
       post.target = "_blank";
       post.rel = "noopener noreferrer";
       var urlLine = el("div", "pt-url");
