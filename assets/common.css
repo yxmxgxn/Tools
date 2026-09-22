@@ -3,8 +3,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
 
 :root {
-  --accent: #AE8DBC;
-  --accent-hover: #C4A8ED;
+  --accent: #8C6BB8;
   --bg: #fff;
   --fg: #333;
   --muted: #666;
@@ -33,7 +32,7 @@ body {
 }
 
 a { color: var(--muted); text-decoration: none; transition: 0.3s; }
-a:hover { color: var(--accent-hover); }
+a:hover { color: var(--accent); }
 
 code {
   background: var(--code-bg);
