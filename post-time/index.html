@@ -1,0 +1,383 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>SNS投稿日時チェック | Tools</title>
+<meta name="description" content="X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時とアカウント名を表示するツールです。URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。">
+
+<meta property="og:title" content="SNS投稿日時チェック">
+<meta property="og:description" content="X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLから、投稿日時とアカウント名を表示します。">
+<meta property="og:type" content="website">
+
+<link rel="canonical" href="">
+<link rel="icon" href="/assets/glasses-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "SNS投稿日時チェック",
+  "description": "X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時とアカウント名を表示するツールです。URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。",
+  "applicationCategory": "UtilityApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+}
+</script>
+
+<style>
+  #pt-url {
+    width: 100%; min-height: 5.5em; padding: 8px 10px; margin: 0.75rem 0;
+    border: 1px solid var(--line); font-size: 14px; font-family: inherit;
+    background: var(--bg); color: var(--fg); resize: vertical;
+  }
+  #pt-list { list-style: none; margin: 0.5rem 0; padding: 0; }
+  .pt-row {
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 0.7rem 0.9rem; margin: 0 0 10px;
+  }
+  .pt-head {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    font-size: 14px;
+  }
+  .pt-svc {
+    font-size: 12px; padding: 1px 8px; border-radius: 10px;
+    background: var(--code-bg); border: 1px solid var(--line);
+  }
+  .pt-user-none { color: var(--muted); }
+  .pt-time-line {
+    display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+    margin-top: 0.3rem;
+  }
+  .pt-time { font-size: 1.25rem; font-weight: 700; }
+  .pt-ago { color: var(--muted); font-size: 13px; }
+  .pt-copy {
+    padding: 3px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+    cursor: pointer; font-size: 13px; border-radius: 4px;
+  }
+  .pt-url { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 0.3rem; }
+  .pt-hint { font-size: 13px; color: var(--muted); margin-top: 0.3rem; }
+  .pt-err { color: #c0392b; font-size: 14px; }
+  .pt-bml {
+    display: flex; gap: 10px; align-items: center;
+    flex-wrap: wrap; margin: 0.75em 0;
+  }
+  .pt-bml-link {
+    display: inline-block; padding: 8px 16px; background: var(--accent);
+    border-radius: 4px; color: #fff !important; text-decoration: none; font-size: 14px;
+  }
+  .pt-bml-copy {
+    padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+    cursor: pointer; font-size: 14px; border-radius: 4px;
+  }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Tools</a></div>
+</header>
+
+<main>
+  <h1>SNS投稿日時チェック</h1>
+  X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLを貼るだけで、投稿日時(日本時間)とアカウント名を表示します。<br>
+  URLに含まれるIDから時刻を逆算するので、投稿を開かなくても秒単位で分かります。1行に1つずつ、複数まとめて貼れます。
+
+  <textarea id="pt-url" placeholder="https://x.com/ユーザー名/status/0000000000&#10;https://www.instagram.com/p/XXXXXXXXXXX/&#10;https://www.tiktok.com/@ユーザー名/video/0000000000" autocomplete="off" spellcheck="false"></textarea>
+
+  <ul id="pt-list"></ul>
+
+  <h2>ブックマークレット</h2>
+  対応しているSNSで投稿のページを開いた状態で実行すると、URLのコピペなしでこのツールを開けます。<br>
+  PCでは下のボタンをブックマークバーにドラッグして登録してください。スマホでは「コードをコピー」して、適当なページをブックマークしてから編集でURL欄に貼り付けてください。
+  <div class="pt-bml">
+    <a class="pt-bml-link" id="pt-bml-open" href="#">投稿日時をチェック</a>
+    <button type="button" class="pt-bml-copy">コードをコピー</button>
+  </div>
+
+  <h2>対応しているURL</h2>
+  <ul>
+    <li><strong>X</strong>：<code>x.com/ユーザー名/status/番号</code>(twitter.com も可)</li>
+    <li><strong>Instagram</strong>：<code>instagram.com/p/コード</code>・<code>/reel/コード</code>・<code>/stories/ユーザー名/番号</code></li>
+    <li><strong>TikTok</strong>：<code>tiktok.com/@ユーザー名/video/番号</code>(<code>/photo/</code> も可)</li>
+    <li><strong>Threads</strong>：<code>threads.com/@ユーザー名/post/コード</code>(threads.net も可)</li>
+    <li><strong>Bluesky</strong>：<code>bsky.app/profile/ハンドル/post/コード</code></li>
+    <li><strong>Misskey</strong>：<code>サーバー/notes/ID</code>(misskey.io 以外のサーバーも可)</li>
+    <li><strong>Mastodon</strong>：<code>サーバー/@ユーザー名/番号</code>(mstdn.jp 以外のサーバーも可)</li>
+  </ul>
+  MisskeyのURLにはアカウント名が含まれないため、日時だけを表示します。<br>
+  InstagramのURLはふつうアカウント名を含みません。投稿の<strong>日付部分のリンク</strong>をコピーすると <code>instagram.com/ユーザー名/reel/コード</code> の形になり、アカウント名も表示できます。<br>
+  TikTokの短縮URL(<code>vm.tiktok.com/…</code>)やXの <code>t.co/…</code> は、一度ブラウザで開いて表示された長いURLを貼ってください。
+
+  <h2>仕組み</h2>
+  どのサービスも、投稿IDの上位ビットに投稿時刻が埋め込まれています。このツールはIDからその部分を取り出して時刻に戻しているだけで、どこにも通信しません。
+  <ul>
+    <li><strong>X</strong>：ID を22ビット右にずらすと、2010年11月4日からの経過ミリ秒になります。</li>
+    <li><strong>Instagram</strong>：URLのコードはIDを64進数(<code>A-Z a-z 0-9 - _</code>)で書いたものです。数に戻して23ビット右にずらすと、2011年8月24日からの経過ミリ秒になります。</li>
+    <li><strong>TikTok</strong>：ID を32ビット右にずらすと、そのままUNIX時間(秒)になります。</li>
+    <li><strong>Threads</strong>：Instagramと同じ仕組みです。</li>
+    <li><strong>Bluesky</strong>：URL末尾の13文字は32進数(<code>2-7 a-z</code>)です。数に戻して10ビット右にずらすと、UNIX時間(マイクロ秒)になります。</li>
+    <li><strong>Misskey</strong>：サーバーの設定でIDの形式が違います。多くのサーバー(misskey.io など)が使う形式では、先頭8文字を36進数として読むと2000年1月1日からの経過ミリ秒になります。ほかの形式(meid・ulid・objectid)も文字数と文字の種類で見分けて計算します。</li>
+    <li><strong>Mastodon</strong>：ID を16ビット右にずらすと、UNIX時間(ミリ秒)になります。2017年より前の投稿は連番のIDなので計算できません。</li>
+  </ul>
+  表示される時刻は「IDが発行された瞬間」です。予約投稿や下書きからの投稿では、画面上の投稿日時と少しずれることがあります。<br>
+  URLのアカウント名はURLに書いてある文字をそのまま出しています。Xはユーザー名の部分が違っていても同じ投稿が開けるため、改名前のURLや手で書き換えたURLでは実際の投稿者と一致しないことがあります。
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+<script>
+(function () {
+  var B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  var WEEK = ["日", "月", "火", "水", "木", "金", "土"];
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  // Instagramのショートコード(64進数)→メディアID。非公開投稿の長いコードも先頭11文字がID
+  function igCodeToId(code) {
+    var n = 0n;
+    for (var i = 0; i < Math.min(code.length, 11); i++) {
+      var v = B64.indexOf(code[i]);
+      if (v < 0) return null;
+      n = n * 64n + BigInt(v);
+    }
+    return n;
+  }
+  function igIdToMs(id) { return Number((id >> 23n) + 1314220021721n); }
+
+  // 上から順に試す。parse は {user, ms} か {err} を返す
+  var SERVICES = [
+    {
+      name: "X",
+      re: /(?:x|twitter)\.com\/([A-Za-z0-9_]+)\/status(?:es)?\/(\d+)/,
+      profile: function (u) { return "https://x.com/" + u; },
+      parse: function (m) {
+        var id = BigInt(m[2]);
+        if (id < 300000000000000n) return { err: "2010年11月以前のポストはIDに時刻が入っていないため計算できません。" };
+        return {
+          user: m[1].toLowerCase() === "i" ? null : m[1],
+          ms: Number((id >> 22n) + 1288834974657n),
+          hint: m[1].toLowerCase() === "i" ? "この形式のURLにはユーザー名が含まれていません。" : ""
+        };
+      }
+    },
+    {
+      name: "Instagram",
+      re: /(?:instagram\.com|instagr\.am)\/stories\/([A-Za-z0-9._]+)\/(\d+)/,
+      profile: function (u) { return "https://www.instagram.com/" + u + "/"; },
+      parse: function (m) { return { user: m[1], ms: igIdToMs(BigInt(m[2])) }; }
+    },
+    {
+      name: "Instagram",
+      re: /(?:instagram\.com|instagr\.am)\/(?:([A-Za-z0-9._]+)\/)?(?:p|reels?|tv)\/([A-Za-z0-9_-]+)/,
+      profile: function (u) { return "https://www.instagram.com/" + u + "/"; },
+      parse: function (m) {
+        var id = igCodeToId(m[2]);
+        if (id === null) return { err: "投稿コードを読み取れませんでした。" };
+        return {
+          user: m[1] || null,
+          ms: igIdToMs(id),
+          hint: m[1] ? "" : "アカウント名を出すには、投稿の日付部分のリンク(instagram.com/ユーザー名/reel/…)を貼ってください。"
+        };
+      }
+    },
+    {
+      name: "TikTok",
+      re: /tiktok\.com\/@([A-Za-z0-9._]+)\/(?:video|photo)\/(\d+)/,
+      profile: function (u) { return "https://www.tiktok.com/@" + u; },
+      parse: function (m) { return { user: m[1], ms: Number(BigInt(m[2]) >> 32n) * 1000 }; }
+    },
+    {
+      name: "Threads",
+      re: /threads\.(?:net|com)\/@([A-Za-z0-9._]+)\/post\/([A-Za-z0-9_-]+)/,
+      profile: function (u) { return "https://www.threads.com/@" + u; },
+      parse: function (m) {
+        var id = igCodeToId(m[2]);
+        if (id === null) return { err: "投稿コードを読み取れませんでした。" };
+        return { user: m[1], ms: igIdToMs(id) };
+      }
+    },
+    {
+      name: "Bluesky",
+      re: /bsky\.app\/profile\/([^\/\s?#]+)\/post\/([a-z2-7]{13})/,
+      profile: function (u) { return "https://bsky.app/profile/" + u; },
+      parse: function (m) {
+        // TID: base32-sortable 13文字。10ビット右にずらすとUNIXマイクロ秒
+        var n = 0n;
+        for (var i = 0; i < 13; i++) n = n * 32n + BigInt(B32.indexOf(m[2][i]));
+        return { user: m[1], ms: Number((n >> 10n) / 1000n) };
+      }
+    },
+    {
+      name: "Misskey",
+      re: /https?:\/\/([^\/\s]+)\/notes\/([0-9a-zA-Z]+)/,
+      profile: null,
+      parse: function (m) {
+        var ms = misskeyIdToMs(m[2]);
+        if (ms === null) return { err: "このサーバーのノートIDの形式には対応していません。" };
+        return { user: null, ms: ms, hint: "MisskeyのURLにはアカウント名が含まれません(サーバー: " + m[1] + ")。" };
+      }
+    },
+    {
+      // Mastodon系。サーバーごとにドメインが違うので /@ユーザー名/数字 の形で見分ける
+      name: "Mastodon",
+      re: /https?:\/\/([^\/\s]+)\/(?:@([A-Za-z0-9_]+(?:@[^\/\s]+)?)|users\/([A-Za-z0-9_]+)\/statuses)\/(\d+)/,
+      profile: null,
+      parse: function (m) {
+        var user = m[2] || m[3];
+        return {
+          user: user,
+          link: "https://" + m[1] + "/@" + user,
+          ms: Number(BigInt(m[4]) >> 16n)
+        };
+      }
+    }
+  ];
+
+  var B32 = "234567abcdefghijklmnopqrstuvwxyz";
+
+  // Misskeyはサーバー設定でID形式が違う。長さと文字種で見分ける
+  function misskeyIdToMs(id) {
+    if (/^[0-9a-z]{10}$/.test(id) || /^[0-9a-z]{16}$/.test(id)) {
+      // aid / aidx: 先頭8文字が 2000-01-01 からのミリ秒(36進数)
+      return parseInt(id.slice(0, 8), 36) + 946684800000;
+    }
+    if (/^[0-9A-Z]{26}$/i.test(id)) {
+      // ulid: 先頭10文字がUNIXミリ秒(Crockford base32)
+      var C = "0123456789ABCDEFGHJKMNPQRSTVWXYZ", n = 0;
+      for (var i = 0; i < 10; i++) n = n * 32 + C.indexOf(id[i].toUpperCase());
+      return n;
+    }
+    if (/^[0-9a-f]{24}$/.test(id)) {
+      // meid は先頭が8以上(ミリ秒に 0x800000000000 を足してある)、objectid は先頭8桁がUNIX秒
+      return parseInt(id[0], 16) >= 8
+        ? parseInt(id.slice(0, 12), 16) - 0x800000000000
+        : parseInt(id.slice(0, 8), 16) * 1000;
+    }
+    return null;
+  }
+
+  var SHORT_LINK = /(?:vm|vt)\.tiktok\.com\/|tiktok\.com\/t\/|t\.co\//;
+
+  function analyze(line) {
+    if (SHORT_LINK.test(line)) {
+      return { err: "短縮URLはIDを含まないため計算できません。一度ブラウザで開いて、表示された長いURLを貼ってください。" };
+    }
+    for (var i = 0; i < SERVICES.length; i++) {
+      var s = SERVICES[i];
+      var m = line.match(s.re);
+      if (!m) continue;
+      var r = s.parse(m);
+      r.service = s;
+      if (!r.err && (r.ms < Date.UTC(2006, 0, 1) || r.ms > Date.now() + 86400000)) {
+        r.err = "IDから日時を計算できませんでした(想定外の形式です)。";
+      }
+      return r;
+    }
+    return { err: "対応していないURLです。対応しているSNSの投稿URLを貼ってください。" };
+  }
+
+  function formatJst(ms) {
+    var d = new Date(ms + 9 * 3600 * 1000);
+    return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) +
+      " (" + WEEK[d.getUTCDay()] + ") " +
+      pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds());
+  }
+
+  function ago(ms) {
+    var sec = Math.floor((Date.now() - ms) / 1000);
+    if (sec < 60) return "たった今";
+    if (sec < 3600) return Math.floor(sec / 60) + "分前";
+    if (sec < 86400) return Math.floor(sec / 3600) + "時間前";
+    return Math.floor(sec / 86400).toLocaleString() + "日前";
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function render() {
+    var list = $("pt-list");
+    list.textContent = "";
+    $("pt-url").value.split(/\s+/).filter(Boolean).forEach(function (line) {
+      var r = analyze(line);
+      var li = el("li", "pt-row");
+
+      if (r.err) {
+        li.appendChild(el("div", "pt-err", r.err));
+        li.appendChild(el("div", "pt-url", line));
+        list.appendChild(li);
+        return;
+      }
+
+      var head = el("div", "pt-head");
+      head.appendChild(el("span", "pt-svc", r.service.name));
+      if (r.user) {
+        var href = r.link || (r.service.profile && r.service.profile(r.user));
+        var a = el(href ? "a" : "span", null, "@" + r.user);
+        if (href) {
+          a.href = href;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+        }
+        head.appendChild(a);
+      } else {
+        head.appendChild(el("span", "pt-user-none", "アカウント名なし"));
+      }
+      li.appendChild(head);
+
+      var time = formatJst(r.ms);
+      var tl = el("div", "pt-time-line");
+      tl.appendChild(el("span", "pt-time", time));
+      tl.appendChild(el("span", "pt-ago", ago(r.ms)));
+      var btn = el("button", "pt-copy", "コピー");
+      btn.type = "button";
+      btn.addEventListener("click", function () {
+        navigator.clipboard.writeText(time);
+        btn.textContent = "コピーしました";
+        setTimeout(function () { btn.textContent = "コピー"; }, 1500);
+      });
+      tl.appendChild(btn);
+      li.appendChild(tl);
+
+      if (r.hint) li.appendChild(el("div", "pt-hint", r.hint));
+      li.appendChild(el("div", "pt-url", line));
+      list.appendChild(li);
+    });
+  }
+
+  $("pt-url").addEventListener("input", render);
+
+  // ブックマークレットは、このページ自身のURLを指すよう動的生成(ホスト先が変わっても追従する)
+  var toolUrl = location.origin + location.pathname;
+  $("pt-bml-open").setAttribute(
+    "href",
+    "javascript:window.open('" + toolUrl + "?url='+encodeURIComponent(location.href));"
+  );
+
+  var canon = document.querySelector('link[rel="canonical"]');
+  if (canon) canon.setAttribute("href", toolUrl);
+
+  document.querySelectorAll(".pt-bml-copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      navigator.clipboard.writeText(btn.previousElementSibling.getAttribute("href"));
+      btn.textContent = "コピーしました";
+      setTimeout(function () { btn.textContent = "コードをコピー"; }, 1500);
+    });
+  });
+
+  var pre = new URLSearchParams(location.search).get("url");
+  if (pre) $("pt-url").value = pre;
+  render();
+})();
+</script>
+</body>
+</html>
