@@ -162,6 +162,36 @@ input[type="range"] { accent-color: var(--accent); }
 /* 1ページに複数のツールがあるときの区切り */
 hr.tool-sep { border: none; border-top: 1px solid var(--line); margin: 2.5rem 0 0; }
 
+/* 関連するツールへの一言の案内 */
+.related { margin: 1.5rem 0 0; font-size: 14px; }
+.related a { color: var(--accent); }
+
+/* 解説記事のシリーズ(8RGB指定・LoopHS の3部作)。媒体のアイコンを並べ、下に副題を書く */
+.series-title { margin: 0 0 0.75rem; font-size: 14px; color: var(--muted); }
+.series-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (max-width: 640px) { .series-list { grid-template-columns: 1fr; } }
+.series-list a {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--fg);
+}
+.series-list a:hover { border-color: var(--accent); color: var(--fg); }
+.series-head { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
+.series-head svg { width: 32px; height: 32px; flex: none; }
+.series-sub { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
 /* トップページのツール一覧カード
 -------------------------------------*/
 .tool-grid {
