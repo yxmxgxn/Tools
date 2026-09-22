@@ -550,7 +550,7 @@
   var toolUrl = location.origin + location.pathname;
   $("pt-bml-open").setAttribute(
     "href",
-    "javascript:window.open('" + toolUrl + "?url='+encodeURIComponent(location.href));"
+    "javascript:void(window.open('" + toolUrl + "?url='+encodeURIComponent(location.href)));"
   );
 
   var canon = document.querySelector('link[rel="canonical"]');

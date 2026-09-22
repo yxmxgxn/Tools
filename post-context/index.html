@@ -229,7 +229,7 @@
   var toolUrl = location.origin + location.pathname;
   $("ctx-bml-open").setAttribute(
     "href",
-    "javascript:window.open('" + toolUrl + "?url='+encodeURIComponent(location.href));"
+    "javascript:void(window.open('" + toolUrl + "?url='+encodeURIComponent(location.href)));"
   );
 
   // canonical も自ページに合わせる
