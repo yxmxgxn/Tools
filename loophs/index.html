@@ -63,7 +63,7 @@
   <div class="l-row">
     <span class="l-label">L</span>
     <div class="l-steps" id="l-steps"></div>
-    <span class="l-val" id="l-val">4</span>
+    <span class="l-val" id="l-val">5</span>
   </div>
 
   <div id="hsl-display"></div>
@@ -80,9 +80,11 @@
   const W = 300, CX = W/2, CY = W/2;
   const R_OUT = 140, R_IN = 42; // ドーナツ
 
-  let selectedAngle = 0;
-  let selectedRadius = R_OUT;
-  let lVal = 4;
+  // 初期色はサイトのアクセントカラー #8C6BB8 にいちばん近い色(#8C79C5、8RGB では #$435)。
+  // 明度は9段階なので 57% ちょうどにはできず、L=5(62.5%) にして色相・彩度で寄せている
+  let selectedAngle = 254.3 / 360 * Math.PI * 2;
+  let selectedRadius = R_IN + 0.397 * (R_OUT - R_IN);
+  let lVal = 5;
 
   function toRGB255(v) {
     if (v === 0) return 0;
