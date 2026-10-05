@@ -7,13 +7,7 @@
 <meta name="description" content="RGBの各チャンネルを0〜7の8段階で指定して色を作る／確認するツール。8RGB表記とHEXを出力します。">
 <link rel="icon" href="/assets/glasses-icon.png">
 <link rel="stylesheet" href="/assets/common.css">
-<meta property="og:title" content="8-Step RGB Grid Color Space Specification Method">
-<meta property="og:image" content="https://yxmxgxn.github.io/8RGBSpecification/8RGB.png">
-<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/8rgb/">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://yxmxgxn.github.io/8RGBSpecification/8RGB.png">
-<meta name="twitter:creator" content="@yxmxgxn">
+
 <style>
   .container { max-width: 440px; }
 
@@ -66,8 +60,9 @@
 </header>
 
 <main>
-  <h1>8RGB指定</h1>
-  <p>RGBの各チャンネルを0〜7の8段階で指定して色を作ります。クリックした値の前後の色が両側に並びます。8RGB・HEXのコードはクリックでコピーできます。</p>
+  <h1>8step RGB Select UI</h1>
+  <p>カラーピッカーから細かく色を選択する必要がある場面は限られているため、RGBの各チャンネルを0〜7の8段階で指定しし大まかな色を選択するUIを作りました。詳しい解説は下にシンクしています。</p>
+  <p>クリックした値の前後の色が両側に並びます。8RGB・HEXのコードはクリックでコピーできます。</p>
   <div class="container">
 <div class="preview-wrap">
     <div class="swatch" id="swatch-prev"><span class="swatch-label" id="label-prev"></span></div>
@@ -110,7 +105,7 @@
     </div>
   </div>
   </div>
-  <p class="related">色相環から直感的に選ぶなら → <a href="/loophs/">LoopHS（色相環＋9段階L）</a></p>
+  <p class="related">色相環から直感的に選ぶなら → <a href="/loophs/">LoopHS UI</a></p>
 
   <h2>解説記事（3部作）</h2>
   <p class="series-title">ハロプロメンバーカラーの公式によるCSS指定への感謝の表明</p>

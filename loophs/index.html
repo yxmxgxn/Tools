@@ -4,16 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LoopHS（色相環＋9段階L） | Hello! Tools</title>
-<meta name="description" content="色相環をクリック＋明度9段階で色を選び、8RGB／HEXに変換するツールです。">
+<meta name="description" content="従来の2軸のカラーピッカーは微調整には向いていまが、直感的に色を選ぶのには隣り合う色同士の変化が捉えにくい。そこで色相を直感的に認知しやすい環状に配置するUIを考案しました。">
 <link rel="icon" href="/assets/glasses-icon.png">
 <link rel="stylesheet" href="/assets/common.css">
 <meta property="og:title" content="Loop Hue Saturation 9 Step Lightness Color Space Specification Method">
 <meta property="og:image" content="https://yxmxgxn.github.io/8RGBSpecification/LoopHS.png">
 <meta property="og:url" content="https://tools.yxmxgxn.workers.dev/loophs/">
 <meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://yxmxgxn.github.io/8RGBSpecification/LoopHS.png">
-<meta name="twitter:creator" content="@yxmxgxn">
+
 <style>
   .container { max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
 
@@ -49,7 +47,8 @@
 </header>
 
 <main>
-  <h1>LoopHS（色相環＋9段階L）</h1>
+  <h1>LoopHS UI</h1>
+  <p>従来の2軸のカラーピッカーは微調整には向いていまが、直感的に色を選ぶのには隣り合う色同士の変化が捉えにくい。そこで色相を直感的に認知しやすい環状に配置するUIを考案しました。詳しい解説は下にリンクしています</p>
   <p>色相環をクリックして色を選び、明度(L)を9段階で調整します。8RGB・HEXのコードはクリックでコピーできます。</p>
   <div class="container">
 <div class="wheel-wrap">
@@ -68,7 +67,7 @@
 
   <div id="hsl-display"></div>
   </div>
-  <p class="related">RGB を1チャンネルずつ細かく決めるなら → <a href="/8rgb/">8RGB指定</a></p>
+  <p class="related">RGB を1チャンネルずつ細かく決めるなら → <a href="/8rgb/">8step RGB Select UI</a></p>
 
   <h2>解説記事（3部作）</h2>
   <p class="series-title">ハロプロメンバーカラーの公式によるCSS指定への感謝の表明</p>
