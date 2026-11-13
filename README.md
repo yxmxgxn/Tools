@@ -19,7 +19,7 @@ tools/
 
 - `worker/index.js` … Cloudflare Worker。`/sns-account-lookup/api` のリクエストだけを処理する（`wrangler.jsonc` の `assets.run_worker_first` で指定）。それ以外のパスは、これまでどおり静的ファイルをそのまま返す。
 - `worker/` は配信用の `public/` には入れない（`build/build.sh` で除外）。
-- 回数制限は、Workerのメモリによる簡易なものだけ。本格的に止めるときは、Cloudflareのダッシュボードで `/sns-account-lookup/api` にレート制限ルールを付ける。
+- 回数制限は、`wrangler.jsonc` の `ratelimits`（Cloudflareの Rate Limiting バインディング）で、1人あたり60秒に8回（`LOOKUP_LIMITER`）、全体で60秒に120回（`LOOKUP_GLOBAL`）。あわせて、Workerのメモリによる簡易な制限もある。拠点ごとの数え上げなので、きっちりした数ではない。
 
 ## 新しいツールの足し方
 

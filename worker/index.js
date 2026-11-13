@@ -184,6 +184,18 @@ export async function handleLookup(request, env) {
     if (oh !== new URL(request.url).host) return json({ error: 'このサイトの画面からだけ使えます' }, 403);
   }
 
+  // Cloudflareのレート制限（wrangler.jsonc の ratelimits。付いているときだけ働く）。
+  // 入力が不正でも1回として数える。LOOKUP_LIMITER は1人あたり、LOOKUP_GLOBAL は全体。
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  if (env && env.LOOKUP_LIMITER) {
+    const { success } = await env.LOOKUP_LIMITER.limit({ key: ip });
+    if (!success) return json({ error: '短い時間に調べすぎです。しばらくしてからもう一度試してください' }, 429);
+  }
+  if (env && env.LOOKUP_GLOBAL) {
+    const { success } = await env.LOOKUP_GLOBAL.limit({ key: 'all' });
+    if (!success) return json({ error: 'いま混み合っています。しばらくしてからもう一度試してください' }, 429);
+  }
+
   const text = (await request.text()).slice(0, MAX_BODY);
   const u = new URLSearchParams(text).get('u') || '';
   const lines = u.trim().split(/\s+/).filter(Boolean);
@@ -192,13 +204,9 @@ export async function handleLookup(request, env) {
 
   const parsed = lines.map(parseInput);
   const need = parsed.reduce((a, p) => a + (p.error ? 0 : p.service === 'instagram_or_threads' ? 2 : 1), 0);
-  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-  if (need > 0) {
-    if (rateHit(ip, need)) return json({ error: '短い時間に調べすぎです。しばらくしてからもう一度試してください' }, 429);
-    if (env && env.LOOKUP_LIMITER) {
-      const { success } = await env.LOOKUP_LIMITER.limit({ key: ip });
-      if (!success) return json({ error: '短い時間に調べすぎです。しばらくしてからもう一度試してください' }, 429);
-    }
+  // Workerのメモリによる簡易な制限（SNSへの問い合わせ回数で数える）。上のバインディングの補助
+  if (need > 0 && rateHit(ip, need)) {
+    return json({ error: '短い時間に調べすぎです。しばらくしてからもう一度試してください' }, 429);
   }
 
   const results = [];
