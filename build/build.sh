@@ -18,6 +18,7 @@ rsync -a ./ "$OUT/" \
   --exclude '/.git/' \
   --exclude '/.github/' \
   --exclude '/build/' \
+  --exclude '/worker/' \
   --exclude '/node_modules/' \
   --exclude '/package.json' \
   --exclude '/package-lock.json' \

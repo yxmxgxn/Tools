@@ -1,0 +1,115 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+
+<title>使い方・仕組み | 投稿URLからアカウントを調べる | Hello! Tools</title>
+<meta name="description" content="投稿URLからアカウントを調べるツールの使い方と仕組み、通信と入力の扱い、制限について。">
+<meta property="og:title" content="使い方・仕組み | 投稿URLからアカウントを調べる">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/sns-account-lookup/about.html">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/sns-account-lookup/about.html">
+<link rel="icon" href="/assets/glasses-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<style>
+  main ul, main ol { padding-left: 1.4em; margin: 0.4rem 0; }
+  main li { margin: 0.25rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 0.5rem 0; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  .sa-notice { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 4px; padding: 0.6rem 0.9rem; margin: 1rem 0; font-size: 14px; }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <p class="hint-text"><a href="./">← ツールに戻る</a></p>
+  <h1>使い方・仕組み</h1>
+  <p class="hint-text">投稿URLからアカウントを調べる</p>
+
+  <div class="sa-notice"><strong>このツールは通信します。</strong>入力したURLやIDは、このサイトのサーバーを経由して、Instagram・X・Threads・TikTokに問い合わせます。このサイトのほかのツール（ブラウザの中だけで完結するもの）とは、この点が違います。</div>
+
+  <h2>このツールでできること</h2>
+  Instagram・X・Threads・TikTokの<strong>投稿のURL（またはID）</strong>から、次のことが分かります。
+  <ul>
+    <li><strong>今のアカウント名</strong></li>
+    <li><strong>今日現在のURL</strong>（アカウント名が入った形）</li>
+    <li>投稿日時（IDから計算するので、秒まで分かります）</li>
+  </ul>
+  URLからアカウント名が消えているとき、古いURLで名前が変わっているとき、IDだけしか手元にないときに使えます。
+
+  <h2>使い方</h2>
+  <ol>
+    <li>調べたい投稿のURL（またはID）を、入力欄に貼ります。1行に1つ、5件まで調べられます。</li>
+    <li>「調べる」を押すと、サービス名、今のアカウント名、今日現在のURL、投稿日時が出ます。</li>
+    <li>「アカウント名をコピー」「URLをコピー」で、結果をコピーできます。</li>
+  </ol>
+  URLではなく、IDやコードだけを入れても調べられます（下の「IDだけを入れたときの判別」）。
+
+  <h2>対応しているSNSと入力</h2>
+  <table>
+    <tr><th>SNS</th><th>入力できるもの</th></tr>
+    <tr><td>Instagram</td><td><code>instagram.com/p/コード</code>・<code>/reel/コード</code>・<code>/tv/コード</code>、またはコード（10〜11文字）</td></tr>
+    <tr><td>X</td><td><code>x.com/ユーザー名/status/番号</code>（twitter.com も可）、または番号</td></tr>
+    <tr><td>Threads</td><td><code>threads.com/@ユーザー名/post/コード</code>（threads.net も可）、またはコード</td></tr>
+    <tr><td>TikTok</td><td><code>tiktok.com/@ユーザー名/video/番号</code>（<code>/photo/</code> も可）、または番号（19桁）</td></tr>
+  </table>
+  <p class="hint-text">TikTokの短縮URL（<code>vm.tiktok.com/…</code>）やXの <code>t.co/…</code> は、一度ブラウザで開いて表示された長いURLを貼ってください。</p>
+
+  <h3>IDだけを入れたときの判別</h3>
+  <ul>
+    <li><strong>数字だけ</strong>のID：XとTikTokは、どちらもIDに時刻が入っています。数字をそれぞれの規則で時刻に直して、妥当な年になるほうを採用します。現在のIDでは、片方だけが妥当になります。</li>
+    <li><strong>10〜11文字の英数字のコード</strong>：InstagramとThreadsは、コードの形が同じなので、<strong>両方に問い合わせて</strong>、見つかったほうを答えます。</li>
+  </ul>
+
+  <h2>仕組み</h2>
+  どのサービスも、URLのユーザー名の部分が違っていても、IDだけで同じ投稿を開きます。そして、開いたあとで、正しい（今の）ユーザー名を含むURLに書き換えます。このツールは、<strong>その書き換え先を読み取っているだけ</strong>です。
+  <table>
+    <tr><th>SNS</th><th>適当な名前で開くURL</th><th>結果の読み取り方</th></tr>
+    <tr><td>Instagram</td><td><code>instagram.com/x/p/コード/</code></td><td>転送先のURLを見る</td></tr>
+    <tr><td>X</td><td><code>x.com/i/status/番号</code></td><td>転送先のURLを見る</td></tr>
+    <tr><td>Threads</td><td><code>threads.com/i/post/コード</code></td><td>転送先のURLを見る</td></tr>
+    <tr><td>TikTok</td><td><code>tiktok.com/@i/video/番号</code></td><td>転送されないので、ページの中のアカウント名を読む</td></tr>
+  </table>
+  投稿日時は、IDに埋め込まれた時刻を取り出して計算しています（くわしくは<a href="/post-time/">SNS投稿日時ビューア</a>の説明を見てください）。
+  <div class="sa-notice"><strong>「今の名前」が分かる方法です。</strong>投稿したときの名前が分かるわけではありません。アカウント名を変えている場合は、変更後の名前が出ます。</div>
+
+  <h2>通信と入力の扱い</h2>
+  <ul>
+    <li>入力したURLやIDは、<strong>このサイトのサーバー</strong>が受け取り、そこからInstagram・X・Threads・TikTokのいずれかに問い合わせます。あなたのパソコンからSNSに直接つながるわけではありません。</li>
+    <li>サーバーは、<strong>入力から取り出したID</strong>だけを使って問い合わせ先のURLを作ります。入力されたURLそのものには接続しません。</li>
+    <li>入力・結果は、<strong>保存しません</strong>。このツールのプログラムは、ログにも書きません。</li>
+    <li>使いすぎを防ぐため、<strong>回数を制限</strong>しています。そのために、アクセス元の情報を、回数を数える間だけ、サーバーのメモリの中で使います。</li>
+    <li>ログイン、パスワード、アカウント連携は一切ありません。</li>
+    <li>ブラウザに、あなたの情報を保存することはありません。</li>
+  </ul>
+  <p class="hint-text">配信元のCloudflareは、一般的なアクセスの記録を取ることがあります。このツールのプログラムが入力内容を保存するわけではありません。</p>
+
+  <h2>注意と制限</h2>
+  <ul>
+    <li><strong>公開されている投稿だけ</strong>が対象です。非公開アカウントの投稿や、削除された投稿は、「見つかりませんでした」になります。</li>
+    <li>相手のサービスが、このサーバーからのアクセスを断ることがあります。その場合も「見つかりませんでした」と出ます。</li>
+    <li>各サービスの仕組みは、公式に公開されたものではありません。予告なく変わると、動かなくなることがあります。</li>
+    <li>TikTokは、ページの中身を読むので、ほかの3つよりも、仕様の変更で読めなくなりやすいです。</li>
+    <li>1回に調べられるのは5件まで、一定時間に調べられる回数にも上限があります。</li>
+    <li>Blueskyは、IDだけでは投稿者を調べられないため、対応していません。</li>
+  </ul>
+
+  <p class="related"><a href="/post-time/">SNS投稿日時ビューア</a>　／　<a href="./">ツールに戻る</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+</body>
+</html>
