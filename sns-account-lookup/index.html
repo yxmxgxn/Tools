@@ -1,0 +1,133 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'unsafe-inline'; connect-src 'self'; form-action 'none'; base-uri 'none'">
+
+<title>投稿URLからアカウントを調べる | Hello! Tools</title>
+<meta name="description" content="Instagram・X・Threads・TikTokの投稿のURL（またはID）から、今のアカウント名と、今日現在のURL、投稿日時を調べるツールです。">
+<meta property="og:title" content="投稿URLからアカウントを調べる">
+<meta property="og:description" content="Instagram・X・Threads・TikTokの投稿のURL（またはID）から、今のアカウント名と今日現在のURLを調べます。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/sns-account-lookup/">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/sns-account-lookup/">
+<link rel="icon" href="/assets/glasses-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<style>
+  #sa-url { min-height: 7.5em; margin: 0.75rem 0; }
+  #sa-list { list-style: none; margin: 0.75rem 0; padding: 0; }
+  .sa-row { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 0.9rem; margin: 0 0 10px; }
+  .sa-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sa-svc { font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--code-bg); border: 1px solid var(--line); }
+  .sa-user { font-size: 1.25rem; font-weight: 700; }
+  .sa-line { margin-top: 0.3rem; font-size: 14px; word-break: break-all; }
+  .sa-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.5rem; }
+  .sa-actions button { padding: 3px 10px; font-size: 13px; }
+  .sa-notice { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 4px; padding: 0.6rem 0.9rem; margin: 1rem 0; font-size: 14px; }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <h1>投稿URLからアカウントを調べる</h1>
+  Instagram・X・Threads・TikTokの投稿のURL（またはID）を入れると、<strong>今のアカウント名</strong>と、<strong>今日現在のURL</strong>、投稿日時が分かります。1行に1つ、5件まで調べられます。
+
+  <div class="sa-notice"><strong>このツールは通信します。</strong>入力したURLやIDは、このサイトのサーバーを経由して、Instagram・X・Threads・TikTokに問い合わせます。入力内容は保存しません。くわしくは<a href="about.html">使い方・仕組み</a>を見てください。</div>
+
+  <textarea id="sa-url" placeholder="https://www.instagram.com/p/XXXXXXXXXXX/&#10;https://x.com/i/status/0000000000000000000&#10;https://www.threads.com/@i/post/XXXXXXXXXXX&#10;https://www.tiktok.com/@i/video/0000000000000000000" autocomplete="off" spellcheck="false"></textarea>
+  <div class="option-row"><button type="button" class="button-primary" id="sa-go">調べる</button><span class="hint-text" id="sa-st"></span></div>
+
+  <ul id="sa-list"></ul>
+
+  <p class="related"><a href="about.html">使い方・仕組み</a>　／　<a href="/post-time/">SNS投稿日時ビューア</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NAMES = { instagram: 'Instagram', x: 'X', threads: 'Threads', tiktok: 'TikTok' };
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function copy(t, btn, label) {
+    try { navigator.clipboard.writeText(t); } catch (e) {}
+    btn.textContent = 'コピーしました';
+    setTimeout(function () { btn.textContent = label; }, 1500);
+  }
+  function errRow(msg, input) {
+    var li = el('li', 'sa-row');
+    li.appendChild(el('div', 'error-text', msg));
+    if (input) li.appendChild(el('div', 'hint-text', input));
+    return li;
+  }
+  function render(r) {
+    if (r.error && !r.username) return errRow(r.error, r.input);
+    var li = el('li', 'sa-row');
+    var head = el('div', 'sa-head');
+    if (r.service) head.appendChild(el('span', 'sa-svc', NAMES[r.service] || r.service));
+    head.appendChild(el('span', 'sa-user', '@' + r.username));
+    li.appendChild(head);
+    if (r.time) li.appendChild(el('div', 'sa-line', '投稿日時（日本時間）：' + r.time));
+    var line = el('div', 'sa-line');
+    var a = el('a', null, r.url);
+    a.href = r.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    line.appendChild(a);
+    li.appendChild(line);
+    var act = el('div', 'sa-actions');
+    var b1 = el('button', null, 'アカウント名をコピー'); b1.type = 'button';
+    b1.addEventListener('click', function () { copy(r.username, b1, 'アカウント名をコピー'); });
+    var b2 = el('button', null, 'URLをコピー'); b2.type = 'button';
+    b2.addEventListener('click', function () { copy(r.url, b2, 'URLをコピー'); });
+    act.appendChild(b1); act.appendChild(b2);
+    li.appendChild(act);
+    return li;
+  }
+  function send(lines) {
+    return fetch('api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'u=' + encodeURIComponent(lines.join('\n')),
+      credentials: 'same-origin'
+    }).then(function (r) {
+      return r.json().catch(function () { return { error: 'サーバーの応答を読めませんでした' }; });
+    });
+  }
+  $('sa-go').addEventListener('click', function () {
+    var lines = $('sa-url').value.split(/\s+/).filter(Boolean);
+    var list = $('sa-list');
+    list.textContent = '';
+    if (!lines.length) { $('sa-st').textContent = 'URLを入れてください'; return; }
+    var btn = $('sa-go');
+    btn.disabled = true;
+    $('sa-st').textContent = '調べています…';
+    var chunks = [];
+    for (var i = 0; i < lines.length; i += 5) chunks.push(lines.slice(i, i + 5));
+    var p = Promise.resolve();
+    chunks.forEach(function (ch) {
+      p = p.then(function () { return send(ch); }).then(function (d) {
+        if (d.error) { list.appendChild(errRow(d.error)); return; }
+        (d.results || []).forEach(function (r) { list.appendChild(render(r)); });
+      }).catch(function () { list.appendChild(errRow('通信に失敗しました')); });
+    });
+    p.then(function () { btn.disabled = false; $('sa-st').textContent = ''; });
+  });
+})();
+</script>
+</body>
+</html>

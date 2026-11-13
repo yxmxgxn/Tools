@@ -13,6 +13,14 @@ tools/
    └─ index.html       … Xポスト前後検索  → /post-context/
 ```
 
+## 例外：サーバーで動く部分
+
+ほとんどのツールは静的だが、`sns-account-lookup`（投稿URLからアカウントを調べる）だけは、SNSに問い合わせるためにサーバー側の処理が要る。
+
+- `worker/index.js` … Cloudflare Worker。`/sns-account-lookup/api` のリクエストだけを処理する（`wrangler.jsonc` の `assets.run_worker_first` で指定）。それ以外のパスは、これまでどおり静的ファイルをそのまま返す。
+- `worker/` は配信用の `public/` には入れない（`build/build.sh` で除外）。
+- 回数制限は、Workerのメモリによる簡易なものだけ。本格的に止めるときは、Cloudflareのダッシュボードで `/sns-account-lookup/api` にレート制限ルールを付ける。
+
 ## 新しいツールの足し方
 
 1. `ツール名/index.html` を作る（`/assets/common.css` を読み込む）
