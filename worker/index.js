@@ -75,28 +75,51 @@ function parseInput(raw) {
     if (/[@: ]/.test(host)) return { error: '対応していないURLです' };
     host = host.replace(/^(www|m|mobile)\./, '');
     const path = m[2] || '';
-    let x;
-    if (host === 'instagram.com' && (x = path.match(/\/(?:p|reels?|tv)\/([A-Za-z0-9_-]{10,11})(?:\/|$)/))) return { service: 'instagram', id: x[1] };
-    if ((host === 'x.com' || host === 'twitter.com') && (x = path.match(/\/status(?:es)?\/(\d{15,19})(?:\/|$)/))) return { service: 'x', id: x[1] };
-    if ((host === 'threads.com' || host === 'threads.net') && (x = path.match(/\/post\/([A-Za-z0-9_-]{10,11})(?:\/|$)/))) return { service: 'threads', id: x[1] };
-    if (host === 'tiktok.com' && (x = path.match(/\/(?:video|photo)\/(\d{19})(?:\/|$)/))) return { service: 'tiktok', id: x[1] };
+    let x, e;
+    // IDの桁数・文字数が合わないときは、問い合わせる前に、理由を伝えて終わる
+    if (host === 'instagram.com' && (x = path.match(/\/(?:p|reels?|tv)\/([A-Za-z0-9_-]+)(?:\/|$)/))) {
+      return (e = lenMsg('Instagram', 'コード', x[1].length, 10, 11, '文字')) ? { error: e } : { service: 'instagram', id: x[1] };
+    }
+    if ((host === 'x.com' || host === 'twitter.com') && (x = path.match(/\/status(?:es)?\/(\d+)(?:\/|$)/))) {
+      return (e = lenMsg('X', '番号', x[1].length, 15, 19, '桁')) ? { error: e } : { service: 'x', id: x[1] };
+    }
+    if ((host === 'threads.com' || host === 'threads.net') && (x = path.match(/\/post\/([A-Za-z0-9_-]+)(?:\/|$)/))) {
+      return (e = lenMsg('Threads', 'コード', x[1].length, 10, 11, '文字')) ? { error: e } : { service: 'threads', id: x[1] };
+    }
+    if (host === 'tiktok.com' && (x = path.match(/\/(?:video|photo)\/(\d+)(?:\/|$)/))) {
+      return (e = lenMsg('TikTok', '番号', x[1].length, 19, 19, '桁')) ? { error: e } : { service: 'tiktok', id: x[1] };
+    }
     return { error: '対応していないURLです（Instagram・X・Threads・TikTokの投稿URLを入れてください）' };
   }
 
-  if (/^\d{15,19}$/.test(s)) {
+  if (/^\d+$/.test(s)) {
+    if (s.length < 15) return { error: `番号の桁数が少ないです（XとTikTokの番号は15〜19桁、TikTokは19桁です。いま${s.length}桁）` };
+    if (s.length > 19) return { error: `番号の桁数が多いです（XとTikTokの番号は19桁までです。いま${s.length}桁）` };
     // XとTikTokは、数字を時刻に直して、妥当な年になるほうを採用する
     const isX = plausible(xMs(s), 1288834974657);
     const isTT = plausible(ttMs(s), 1451606400000);
     if (isX && !isTT) return { service: 'x', id: s };
     if (isTT && !isX) return { service: 'tiktok', id: s };
-    return { error: 'IDからSNSを判別できませんでした（URLで入れてください）' };
+    const hint = s.length < 19 ? `TikTokの番号は19桁で、いま${s.length}桁なので、桁数が足りない可能性があります。` : '';
+    return { error: `IDからSNSを判別できませんでした。${hint}URLで入れると確実です` };
   }
-  if (/^[A-Za-z0-9_-]{10,11}$/.test(s)) {
+  if (/^[A-Za-z0-9_-]+$/.test(s)) {
+    const e = lenMsg('InstagramとThreads', 'コード', s.length, 10, 11, '文字');
+    if (e) return { error: e };
     // InstagramとThreadsはコードの形が同じ。両方試す
     if (!plausible(igMs(s), 1314220021721)) return { error: 'コードの形が正しくありません' };
     return { service: 'instagram_or_threads', id: s };
   }
   return { error: 'URLまたはIDとして読めませんでした' };
+}
+
+// 桁数・文字数のチェック。問題がなければ null、あれば理由のメッセージ
+function lenMsg(name, noun, n, min, max, unit) {
+  const word = unit === '桁' ? '桁数' : '文字数';
+  const rule = min === max ? `${min}${unit}` : `${min}〜${max}${unit}`;
+  if (n < min) return `${name}の${noun}の${word}が少ないです（${rule}。いま${n}${unit}）`;
+  if (n > max) return `${name}の${noun}の${word}が多いです（${rule}。いま${n}${unit}）`;
+  return null;
 }
 
 // ---- 問い合わせ ----

@@ -108,6 +108,35 @@
       return r.json().catch(function () { return { error: 'サーバーの応答を読めませんでした' }; });
     });
   }
+  // 桁数・文字数の事前チェック。問い合わせる前に、画面側で理由を伝える（通信も回数も使わない）。
+  // サーバー側（worker/index.js）にも同じ判定がある。
+  function lenMsg(name, noun, n, min, max, unit) {
+    var word = unit === '桁' ? '桁数' : '文字数';
+    var rule = min === max ? min + unit : min + '〜' + max + unit;
+    if (n < min) return name + 'の' + noun + 'の' + word + 'が少ないです（' + rule + '。いま' + n + unit + '）';
+    if (n > max) return name + 'の' + noun + 'の' + word + 'が多いです（' + rule + '。いま' + n + unit + '）';
+    return null;
+  }
+  function precheck(s) {
+    var m = s.match(/^(?:https?:\/\/)?([^\/\s?#]+)(\/[^\s?#]*)?/i), x;
+    if (m && m[1].indexOf('.') >= 0) {
+      if (/[@: ]/.test(m[1])) return null;
+      var host = m[1].toLowerCase().replace(/^(www|m|mobile)\./, ''), path = m[2] || '';
+      if (host === 'instagram.com' && (x = path.match(/\/(?:p|reels?|tv)\/([A-Za-z0-9_-]+)(?:\/|$)/))) return lenMsg('Instagram', 'コード', x[1].length, 10, 11, '文字');
+      if ((host === 'x.com' || host === 'twitter.com') && (x = path.match(/\/status(?:es)?\/(\d+)(?:\/|$)/))) return lenMsg('X', '番号', x[1].length, 15, 19, '桁');
+      if ((host === 'threads.com' || host === 'threads.net') && (x = path.match(/\/post\/([A-Za-z0-9_-]+)(?:\/|$)/))) return lenMsg('Threads', 'コード', x[1].length, 10, 11, '文字');
+      if (host === 'tiktok.com' && (x = path.match(/\/(?:video|photo)\/(\d+)(?:\/|$)/))) return lenMsg('TikTok', '番号', x[1].length, 19, 19, '桁');
+      return null;
+    }
+    if (/^\d+$/.test(s)) {
+      if (s.length < 15) return '番号の桁数が少ないです（XとTikTokの番号は15〜19桁、TikTokは19桁です。いま' + s.length + '桁）';
+      if (s.length > 19) return '番号の桁数が多いです（XとTikTokの番号は19桁までです。いま' + s.length + '桁）';
+      return null;
+    }
+    if (/^[A-Za-z0-9_-]+$/.test(s)) return lenMsg('InstagramとThreads', 'コード', s.length, 10, 11, '文字');
+    return null;
+  }
+
   $('sa-go').addEventListener('click', function () {
     var lines = $('sa-url').value.split(/\s+/).filter(Boolean);
     var list = $('sa-list');
@@ -116,16 +145,33 @@
     var btn = $('sa-go');
     btn.disabled = true;
     $('sa-st').textContent = '調べています…';
-    var chunks = [];
-    for (var i = 0; i < lines.length; i += 5) chunks.push(lines.slice(i, i + 5));
-    var p = Promise.resolve();
-    chunks.forEach(function (ch) {
-      p = p.then(function () { return send(ch); }).then(function (d) {
-        if (d.error) { list.appendChild(errRow(d.error)); return; }
-        (d.results || []).forEach(function (r) { list.appendChild(render(r)); });
-      }).catch(function () { list.appendChild(errRow('通信に失敗しました')); });
+
+    // 事前チェックで弾いたものは、その場でエラーにして、残りだけを問い合わせる
+    var nodes = new Array(lines.length);
+    var sendIdx = [];
+    lines.forEach(function (l, i) {
+      var e = precheck(l);
+      if (e) nodes[i] = errRow(e, l); else sendIdx.push(i);
     });
-    p.then(function () { btn.disabled = false; $('sa-st').textContent = ''; });
+    var chunks = [];
+    for (var i = 0; i < sendIdx.length; i += 5) chunks.push(sendIdx.slice(i, i + 5));
+
+    var p = Promise.resolve();
+    chunks.forEach(function (idxs) {
+      p = p.then(function () {
+        return send(idxs.map(function (k) { return lines[k]; }));
+      }).then(function (d) {
+        if (d.error) { idxs.forEach(function (k) { nodes[k] = errRow(d.error, lines[k]); }); return; }
+        idxs.forEach(function (k, j) { nodes[k] = d.results && d.results[j] ? render(d.results[j]) : errRow('結果を読めませんでした', lines[k]); });
+      }).catch(function () {
+        idxs.forEach(function (k) { nodes[k] = errRow('通信に失敗しました', lines[k]); });
+      });
+    });
+    p.then(function () {
+      nodes.forEach(function (n) { if (n) list.appendChild(n); });
+      btn.disabled = false;
+      $('sa-st').textContent = '';
+    });
   });
 })();
 </script>
