@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src blob: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>自分のInstagram投稿 検索ツール</title>
+<meta name="description" content="Instagramの書き出しデータ（ZIP）を読み込んで、自分の過去の投稿を、日付・本文・サムネで探すツールです。データはブラウザの中だけで処理し、どこにも送信しません。">
+<meta property="og:title" content="自分のInstagram投稿 検索ツール">
+<meta property="og:description" content="Instagramの書き出しデータ（ZIP）を読み込んで、自分の過去の投稿を、日付・本文・サムネで探すツールです。データはブラウザの中だけで処理し、どこにも送信しません。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/insta-search/">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/insta-search/">
+<style>
+:root{--bg:#fafafa;--fg:#1c1e21;--sub:#6b7280;--card:#fff;--line:#e5e7eb;--accent:#8C6BB8;--mark:#fff3a3}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#ececec;--sub:#9ca3af;--card:#1e1e1e;--line:#333;--mark:#5c4b00}}
+html{scrollbar-gutter:stable}
+@supports not (scrollbar-gutter:stable){html{overflow-y:scroll}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 "Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic",Meiryo,"Noto Sans JP",sans-serif;font-feature-settings:"palt"}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:8px 0}
+.safe{background:var(--card);border:1px solid var(--line);padding:10px 12px;border-radius:6px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;margin:12px 0}
+button,select,input[type=search],input[type=date]{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
+button{cursor:pointer}button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tabs button{border-radius:6px 6px 0 0}.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+@media (max-width:560px){.grid{grid-template-columns:repeat(3,1fr)}.dt{font-size:11px;padding:0 5px;bottom:4px}}
+.tile{position:relative;aspect-ratio:1;background:var(--line);overflow:hidden;cursor:pointer;border-radius:3px}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile .txt{padding:6px;font-size:11px;color:var(--sub);overflow:hidden;height:100%}
+.badge{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;padding:0 6px;border-radius:10px}
+.dt{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);background:#fff;color:#000;font-size:14px;font-weight:600;line-height:1.4;padding:1px 8px;border-radius:4px;white-space:nowrap;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.item .th{flex:0 0 150px;height:150px;position:relative;background:var(--line);border-radius:4px;overflow:hidden;cursor:pointer}
+.item .th img{width:100%;height:100%;object-fit:cover}
+@media (max-width:560px){.item .th{flex-basis:110px;height:110px}}
+.item .body{flex:1;min-width:0}.item .date{color:var(--fg);font-size:16px;font-weight:600}
+.item .cap{white-space:pre-wrap;word-break:break-word}
+mark{background:var(--mark);color:inherit}
+.sub{color:var(--sub);font-size:13px}
+dialog{max-width:min(720px,96vw);width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);padding:14px}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog .dtl{font-size:19px}
+dialog img{max-width:100%;display:block;margin:6px auto;border-radius:4px}
+pre{white-space:pre-wrap;word-break:break-word;font:inherit;margin:8px 0}
+footer{text-align:center;color:var(--sub);font-size:14px;margin:24px 0}
+details summary{cursor:pointer}
+.hide{display:none!important}
+a{color:var(--accent)}
+.calhead{display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:8px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;max-width:420px;margin:0 auto}
+.calgrid .wd{text-align:center;font-size:11px;color:var(--sub)}
+.day{padding:4px 0;min-height:44px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--sub);opacity:.55;font-size:13px;line-height:1.2;cursor:default}
+.day small{display:block;font-size:10px}
+.day.has{background:var(--card);color:var(--fg);opacity:1;border-color:var(--accent);cursor:pointer;font-weight:600}
+.day.sel{background:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+<main>
+<h1>自分のInstagram投稿 検索ツール</h1>
+<div class="safe">これは<b>あなたのブラウザの中だけ</b>で動きます。データは<b>どこにも送信されません</b>。</div>
+
+<div class="card" id="loader">
+  <div class="row">
+    <button class="primary" id="pickzip" type="button">ZIPファイルを選ぶ</button>
+    <button id="pick" type="button">解凍したフォルダを選ぶ</button>
+    <input type="file" id="zipin" accept=".zip,application/zip" multiple class="hide">
+    <input type="file" id="folder" webkitdirectory multiple class="hide">
+    <button id="sample" type="button">サンプルで試す</button>
+    <span class="sub" id="status"></span>
+  </div>
+  <p class="sub" style="margin:8px 0 0">ファイルやフォルダを選ぶとき、ブラウザが「アップロードしますか？」と表示することがありますが、ブラウザの定型文です。実際には<b>どこにも送信されず</b>、このページがフォルダの中を調べるだけです。</p>
+  <details style="margin-top:10px"><summary>書き出しの取り方</summary>
+    <ol class="sub">
+      <li>パソコン：左の三本線（その他）＞ 設定 ＞ 一番上の<b>Metaアカウント</b> ＞ <b>あなたの情報とアクセス許可</b> ＞ <b>あなたの情報をエクスポート</b> ＞ <b>エクスポートを作成</b></li>
+      <li>自分のInstagramのアカウント ＞ <b>デバイスにエクスポート</b></li>
+      <li>情報をカスタマイズ：<b>「すべてをクリア」</b>を押して、<b>「あなたのInstagramアクティビティ」の「メディア」だけ</b>にチェック</li>
+      <li>期間は<b>全期間</b>、フォーマットは<b>JSON</b>、メディアの画質はお好みで（探すだけなら低画質が早いです）</li>
+      <li>完了の通知が来たらZIPをダウンロードし、<b>解凍せずそのままここで選ぶ</b>だけ。ZIPが複数に分かれていたら、まとめて選べます</li>
+      <li>Androidアプリ：右上の三本線 ＞ Metaアカウント から、同じように選びます</li>
+    </ol>
+  </details>
+</div>
+
+<div id="app" class="hide">
+  <div class="tabs row"><button id="t-grid" class="on" type="button">サムネで探す</button><button id="t-list" type="button">検索する</button></div>
+  <div class="card" style="margin-top:0;border-top-left-radius:0">
+    <div class="row">
+      <input type="search" id="q" placeholder="キーワード（スペースでAND、-語 で除外）" style="flex:1;min-width:160px">
+      <select id="sort"><option value="desc">新しい順</option><option value="asc">古い順</option></select>
+    </div>
+    <div class="sub" id="count" style="margin-top:6px"></div>
+    <div class="sub" style="margin-top:2px">見つけた投稿は、Instagramのアクティビティで日付を指定すると開けます（<a href="about#open">手順</a>）。アプリの日付は1日ずれることがあります。</div>
+  </div>
+  <div id="cal" class="card"></div>
+  <div id="view"></div>
+
+</div>
+<footer><a href="about">使い方・仕組み</a>　© 2026 @yxmxgxn</footer>
+</main>
+
+<dialog id="dlg"></dialog>
+
+<script>
+/*PURE*/
+function fixMojibake(s){
+  if(typeof s!=='string'||!s)return '';
+  let hi=false;
+  for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);if(c>255)return s;if(c>127)hi=true;}
+  if(!hi)return s;
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(Uint8Array.from(s,c=>c.charCodeAt(0)));}catch(e){return s;}
+}
+const CAPTION_LABELS=['キャプション','Caption'];
+function extractItem(item){
+  // 新形式（label_values）と旧形式（media直下）の両方に対応。位置情報などは参照しない。
+  let media=null,caption='';
+  if(Array.isArray(item.label_values)){
+    for(const lv of item.label_values){if(Array.isArray(lv.media)&&lv.media.length){media=lv.media;break;}}
+    if(media&&media[0]&&media[0].title)caption=fixMojibake(media[0].title);
+    if(!caption){
+      for(const lv of item.label_values){
+        if(typeof lv.value==='string'&&CAPTION_LABELS.includes(fixMojibake(lv.label||''))){caption=fixMojibake(lv.value);break;}
+      }
+    }
+  }else{
+    media=Array.isArray(item.media)?item.media:null;
+    caption=fixMojibake(item.title||(media&&media[0]&&media[0].title)||'');
+  }
+  if(!media||!media.length)return null;
+  const ts=(item.creation_timestamp||(media[0]&&media[0].creation_timestamp)||item.timestamp||0);
+  return{ts:Number(ts),caption:caption.trim(),uris:media.map(m=>m.uri).filter(Boolean)};
+}
+function buildPosts(lists){
+  const out=[],byUri=new Map();
+  for(const list of lists){
+    if(!Array.isArray(list))continue;
+    for(const it of list){
+      const p=extractItem(it);if(!p||!p.uris.length)continue;
+      let ex=null;
+      for(const u of p.uris){if(byUri.has(u)){ex=byUri.get(u);break;}}
+      let fuzzy=false;
+      if(!ex&&p.caption&&p.ts){
+        // 複数枚投稿は2つのJSONで先頭画像のパスが違うことがある。同じ本文＋ほぼ同時刻なら同一投稿とみなす
+        ex=out.find(o=>o.caption===p.caption&&Math.abs(o.ts-p.ts)<=2)||null;
+        fuzzy=!!ex;
+      }
+      if(ex&&fuzzy){
+        if(p.uris.length>ex.uris.length)ex.uris=p.uris;
+        for(const u of p.uris)byUri.set(u,ex);
+      }else if(ex){
+        if(!ex.caption&&p.caption)ex.caption=p.caption;
+        if(!ex.ts&&p.ts)ex.ts=p.ts;
+        for(const u of p.uris){if(!ex.uris.includes(u)){ex.uris.push(u);byUri.set(u,ex);}}
+      }else{
+        for(const u of p.uris)byUri.set(u,p);
+        out.push(p);
+      }
+    }
+  }
+  return out;
+}
+
+const MIME={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',avif:'image/avif'};
+function makeZipEntry(file,path,method,csize,usize,lho){
+  return{path,size:usize,
+    async blob(){
+      const hd=new DataView(await file.slice(lho,lho+30).arrayBuffer());
+      const start=lho+30+hd.getUint16(26,true)+hd.getUint16(28,true);
+      const raw=file.slice(start,start+csize);
+      const ext=path.slice(path.lastIndexOf('.')+1).toLowerCase();
+      const type=MIME[ext]||'';
+      if(method===0)return new Blob([raw],{type});
+      if(method!==8)throw new Error('unsupported');
+      const b=await new Response(raw.stream().pipeThrough(new DecompressionStream('deflate-raw'))).blob();
+      return new Blob([b],{type});
+    },
+    async text(){return(await this.blob()).text();}
+  };
+}
+async function readZip(file){
+  const size=file.size,tailLen=Math.min(size,65557+22);
+  const tail=new DataView(await file.slice(size-tailLen).arrayBuffer());
+  let eocd=-1;
+  for(let i=tailLen-22;i>=0;i--){if(tail.getUint32(i,true)===0x06054b50){eocd=i;break;}}
+  if(eocd<0)throw new Error('not zip');
+  let count=tail.getUint16(eocd+10,true),cdSize=tail.getUint32(eocd+12,true),cdOff=tail.getUint32(eocd+16,true);
+  if(cdOff===0xFFFFFFFF||count===0xFFFF||cdSize===0xFFFFFFFF){
+    const loc=eocd-20;
+    if(loc>=0&&tail.getUint32(loc,true)===0x07064b50){
+      const off64=Number(tail.getBigUint64(loc+8,true));
+      const rec=new DataView(await file.slice(off64,off64+56).arrayBuffer());
+      count=Number(rec.getBigUint64(32,true));cdSize=Number(rec.getBigUint64(40,true));cdOff=Number(rec.getBigUint64(48,true));
+    }
+  }
+  const cd=new DataView(await file.slice(cdOff,cdOff+cdSize).arrayBuffer());
+  const u8=new Uint8Array(cd.buffer),entries=[];
+  let p=0;
+  for(let i=0;i<count&&p+46<=cd.byteLength;i++){
+    if(cd.getUint32(p,true)!==0x02014b50)break;
+    const method=cd.getUint16(p+10,true);
+    let csize=cd.getUint32(p+20,true),usize=cd.getUint32(p+24,true);
+    const nl=cd.getUint16(p+28,true),el=cd.getUint16(p+30,true),cl=cd.getUint16(p+32,true);
+    let lho=cd.getUint32(p+42,true);
+    const name=new TextDecoder('utf-8').decode(u8.subarray(p+46,p+46+nl));
+    let ep=p+46+nl;const ee=ep+el;
+    while(ep+4<=ee){
+      const id=cd.getUint16(ep,true),sz=cd.getUint16(ep+2,true);
+      if(id===1){let q=ep+4;
+        if(usize===0xFFFFFFFF){usize=Number(cd.getBigUint64(q,true));q+=8;}
+        if(csize===0xFFFFFFFF){csize=Number(cd.getBigUint64(q,true));q+=8;}
+        if(lho===0xFFFFFFFF){lho=Number(cd.getBigUint64(q,true));q+=8;}}
+      ep+=4+sz;
+    }
+    if(!name.endsWith('/'))entries.push(makeZipEntry(file,name,method,csize,usize,lho));
+    p+=46+nl+el+cl;
+  }
+  return entries;
+}
+/*ENDPURE*/
+
+const $=s=>document.querySelector(s);
+function h(tag,attrs,...kids){
+  const e=document.createElement(tag);
+  for(const[k,v]of Object.entries(attrs||{})){
+    if(k==='class')e.className=v;
+    else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);
+    else if(v!==false&&v!=null)e.setAttribute(k,v===true?'':v);
+  }
+  for(const c of kids.flat())if(c!=null)e.append(c.nodeType?c:document.createTextNode(String(c)));
+  return e;
+}
+const pad=n=>String(n).padStart(2,'0');
+const fmtDate=ts=>{const d=new Date(ts*1000);return d.getFullYear()+'/'+pad(d.getMonth()+1)+'/'+pad(d.getDate());};
+const fmtTime=ts=>{const d=new Date(ts*1000);return fmtDate(ts)+' '+pad(d.getHours())+':'+pad(d.getMinutes());};
+const isImg=u=>/\.(jpe?g|png|webp|gif|heic|avif)$/i.test(u)||u.startsWith('data:image');
+// Instagramアプリの日付絞り込みは米国西海岸時間で動いている（実測1件）ため、その日付を併記する
+const laFmt=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'});
+const appDate=ts=>laFmt.format(new Date(ts*1000)).replace(/-/g,'/');
+const appNote=ts=>{const a=appDate(ts);return a===fmtDate(ts)?'':'　※アプリのアクティビティ＞投稿で期間指定するなら '+a;};
+const norm=s=>s.normalize('NFKC').toLowerCase();
+
+let posts=[],state={tab:'grid',sort:'desc',q:'',day:''},calY=0,calM=0;
+
+function imgUrl(im){
+  if(!im.p)im.p=im.url?Promise.resolve(im.url):im.entry.blob().then(b=>URL.createObjectURL(b));
+  return im.p;
+}
+
+// ---- 読み込み ----
+async function loadFiles(files){
+  const st=$('#status');st.textContent='中身を調べています…';
+  let entries;
+  try{
+    const zips=files.filter(f=>/\.zip$/i.test(f.name)&&!f.webkitRelativePath);
+    if(zips.length){
+      if(typeof DecompressionStream==='undefined'){st.textContent='このブラウザはZIPをそのまま読めません。ZIPを解凍して、フォルダを選んでください。';return;}
+      entries=[];for(const z of zips)entries.push(...await readZip(z));
+    }else entries=files.map(f=>({path:f.webkitRelativePath||f.name,size:f.size,blob:async()=>f,text:()=>f.text()}));
+  }catch(e){st.textContent='ZIPを読み込めませんでした（壊れているか、対応していない形式です）。';return;}
+  const jsons=entries.filter(e=>/(^|\/)your_instagram_activity\/media\/posts[^\/]*\.json$/i.test(e.path));
+  if(!jsons.length){st.textContent='投稿のJSONが見つかりません。書き出しの形式は「JSON」を選んでください（HTML形式は非対応です）。ZIPをそのまま選ぶか、解凍したフォルダを選んでください。';return;}
+  const rootOf=e=>e.path.replace(/your_instagram_activity\/.*$/i,'');
+  const roots=[...new Set(jsons.map(rootOf))];
+  const root=roots[0];
+  const use=jsons.filter(e=>rootOf(e)===root);
+  const lists=[];
+  for(const e of use){try{lists.push(JSON.parse(await e.text()));}catch(err){}}
+  const built=buildPosts(lists);
+  const rel=new Map(),base=new Map();
+  for(const e of entries){
+    if(!e.path.startsWith(root))continue;
+    const r=e.path.slice(root.length);
+    if(!r.startsWith('media/'))continue;
+    rel.set(r,e);
+    const b=r.slice(r.lastIndexOf('/')+1);
+    if(!base.has(b))base.set(b,e);
+  }
+  let noImg=0;
+  posts=built.map((p,i)=>{
+    const images=[];
+    for(const u of p.uris){
+      if(!isImg(u))continue;
+      const e=rel.get(u)||base.get(u.slice(u.lastIndexOf('/')+1));
+      if(e)images.push({entry:e});
+    }
+    if(!images.length)noImg++;
+    return{id:i,ts:p.ts,caption:p.caption,images,total:p.uris.length,norm:norm(p.caption)};
+  });
+  st.textContent=posts.length+'件の投稿が見つかりました'+(noImg?`（画像が見つからない投稿 ${noImg}件は本文のみ表示）`:'')+(roots.length>1?'。複数の書き出しが見つかったため、最初の1つだけ使いました':'');
+  start();
+}
+
+// ---- サンプル ----
+function sampleData(){
+  const caps=['朝の散歩で見つけた猫。しっぽがまるい','ラーメン食べた 味玉つき','新しいノートを買った','雨の日の駅','','ベランダのミニトマトが赤くなった','友だちと映画。感想はまた今度','夕焼けがきれいだった','','引っ越しの片付けがおわらない','コーヒーを淹れる練習','公園のベンチで読書','','夜ごはんはカレー','誕生日ケーキ（架空）','海に行った','','本屋で迷子になった','雪が降った','','桜が満開','自転車で遠出','花火大会','','猫がまた寝てる'];
+  const now=new Date(),res=[];
+  const hues=[10,40,80,150,200,260,300,340];
+  caps.forEach((c,i)=>{
+    let d;
+    if(i<3)d=new Date(now.getFullYear()-(i+1),now.getMonth(),now.getDate(),12+i,5);
+    else d=new Date(2019+(i%7),(i*5)%12,1+(i*7)%27,9+i%12,(i*11)%60);
+    const hue=hues[i%8],n=(i%5===0)?3:1,images=[];
+    for(let k=0;k<n;k++){
+      const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue},70%,70%)"/><stop offset="1" stop-color="hsl(${(hue+50)%360},70%,45%)"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="230" font-size="90" text-anchor="middle" fill="#fff" opacity=".85" font-family="sans-serif">${i+1}</text></svg>`;
+      images.push({url:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)});
+    }
+    res.push({id:i,ts:Math.floor(d/1000),caption:c,images,total:n,norm:norm(c)});
+  });
+  return res;
+}
+
+const dayKey=ts=>{const d=new Date(ts*1000);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+const tokens=()=>norm(state.q).split(/[\s　]+/).filter(Boolean);
+// 通常の語はAND、先頭に - を付けた語は除外（例: ラーメン -味玉）。- だけの語は無視
+const kwMatch=(p,toks)=>toks.every(t=>t==='-'?true:t[0]==='-'?!p.norm.includes(t.slice(1)):p.norm.includes(t));
+
+function start(){
+  $('#app').classList.remove('hide');
+  state={tab:state.tab,sort:'desc',q:'',day:'',};
+  $('#q').value='';$('#sort').value='desc';
+  calY=0;calM=0;
+  render();
+}
+
+function renderCal(){
+  const box=$('#cal');box.textContent='';
+  const toks=tokens(),counts=new Map();
+  for(const p of posts)if(kwMatch(p,toks)){const k=dayKey(p.ts);counts.set(k,(counts.get(k)||0)+1);}
+  const ymList=[...new Set(posts.map(p=>dayKey(p.ts).slice(0,7)))].sort();
+  const years=[...new Set(ymList.map(k=>+k.slice(0,4)))].sort((a,b)=>b-a);
+  const monthsOf=y=>new Set(ymList.filter(k=>!y||+k.slice(0,4)===y).map(k=>+k.slice(5)));
+  const avail=monthsOf(calY);
+  const both=!!(calY&&calM);
+  const move=dm=>{const idx=ymList.indexOf(calY+'-'+pad(calM))+dm;if(idx<0||idx>=ymList.length)return;calY=+ymList[idx].slice(0,4);calM=+ymList[idx].slice(5);state.day='';render();};
+  const ysel=h('select',{onchange:e=>{calY=+e.target.value;if(calY&&calM&&!monthsOf(calY).has(calM))calM=0;state.day='';render();}},h('option',{value:0,selected:!calY},'全ての年'),...years.map(y=>h('option',{value:y,selected:y===calY},y+'年')));
+  const msel=h('select',{onchange:e=>{calM=+e.target.value;state.day='';render();}},h('option',{value:0,selected:!calM},'全ての月'),...[...avail].sort((a,b)=>a-b).map(m=>h('option',{value:m,selected:m===calM},m+'月')));
+  const head=h('div',{class:'calhead'},both?h('button',{type:'button',onclick:()=>move(-1),title:'前の月'},'◀'):null,ysel,msel,both?h('button',{type:'button',onclick:()=>move(1),title:'次の月'},'▶'):null);
+  if(calY||calM){head.append(h('button',{type:'button',onclick:()=>{calY=0;calM=0;state.day='';render();}},'選択をクリア'));}
+  box.append(head);
+  if(!both){box.append(h('div',{class:'sub',style:'text-align:center'},'年と月を両方選ぶと、日ごとのカレンダーが出ます'));return;}
+  const g=h('div',{class:'calgrid'});
+  for(const w of ['日','月','火','水','木','金','土'])g.append(h('div',{class:'wd'},w));
+  const first=new Date(calY,calM-1,1).getDay(),days=new Date(calY,calM,0).getDate();
+  for(let i=0;i<first;i++)g.append(h('div'));
+  for(let d=1;d<=days;d++){
+    const key=calY+'-'+pad(calM)+'-'+pad(d),n=counts.get(key)||0;
+    g.append(h('button',{type:'button',class:'day'+(n?' has':'')+(state.day===key?' sel':''),disabled:!n,onclick:()=>{state.day=state.day===key?'':key;render();}},String(d),n?h('small',null,n+'件'):null));
+  }
+  box.append(g);
+}
+
+function filtered(){
+  const toks=tokens();
+  const r=posts.filter(p=>{
+    if(state.day){if(dayKey(p.ts)!==state.day)return false;}
+    else{const d=new Date(p.ts*1000);if(calY&&d.getFullYear()!==calY)return false;if(calM&&d.getMonth()+1!==calM)return false;}
+    return kwMatch(p,toks);
+  });
+  r.sort((a,b)=>state.sort==='desc'?b.ts-a.ts:a.ts-b.ts);
+  return r;
+}
+
+let io=null;
+function lazyImg(el,p){
+  if(!p.images.length)return;
+  el.dataset.pid=p.id;
+  if(!io)io=new IntersectionObserver(es=>{for(const e of es){if(!e.isIntersecting)continue;io.unobserve(e.target);const pp=posts[e.target.dataset.pid];const img=h('img',{alt:'',decoding:'async'});const tgt=e.target;imgUrl(pp.images[0]).then(u=>{img.src=u;tgt.prepend(img);});}},{rootMargin:'300px'});
+  io.observe(el);
+}
+
+function highlight(text){
+  const toks=tokens().filter(t=>t[0]!=='-');
+  if(!toks.length||norm(text).length!==text.length)return[text];
+  const n=norm(text),mask=new Array(text.length).fill(false);
+  for(const t of toks){let i=n.indexOf(t);while(i>=0){for(let k=i;k<i+t.length;k++)mask[k]=true;i=n.indexOf(t,i+t.length);}}
+  const out=[];let i=0;
+  while(i<text.length){let j=i;while(j<text.length&&mask[j]===mask[i])j++;const s=text.slice(i,j);out.push(mask[i]?h('mark',null,s):s);i=j;}
+  return out;
+}
+
+function render(){
+  const list=filtered(),view=$('#view');view.textContent='';
+  if(io){io.disconnect();io=null;}
+  renderCal();
+  $('#count').textContent=((state.day?state.day.replace(/-/g,'/'):(calY||calM)?((calY?calY+'年':'')+(calM?calM+'月':'')):'全期間')+'：')+list.length+'件 / 全'+posts.length+'件';
+  if(state.tab==='grid'){
+    const g=h('div',{class:'grid'});
+    for(const p of list){
+      const t=h('div',{class:'tile',onclick:()=>openPost(p),title:fmtDate(p.ts)},
+        p.images.length?null:h('div',{class:'txt'},p.caption||'（画像なし）'),
+        h('span',{class:'dt'},fmtTime(p.ts)),
+        p.total>1?h('span',{class:'badge'},'▣ '+p.total):null);
+      g.append(t);lazyImg(t,p);
+    }
+    view.append(g);
+  }else{
+    const box=h('div',{class:'card'});
+    for(const p of list){
+      const th=h('div',{class:'th',onclick:()=>openPost(p)});
+      if(p.total>1)th.append(h('span',{class:'badge'},'▣ '+p.total));
+      box.append(h('div',{class:'item'},th,h('div',{class:'body'},h('div',{class:'date'},fmtTime(p.ts)+appNote(p.ts)),h('div',{class:'cap'},p.caption?highlight(p.caption):h('span',{class:'sub'},'（本文なし）')))));
+      lazyImg(th,p);
+    }
+    if(!list.length)box.append(h('div',{class:'sub'},'該当する投稿がありません'));
+    view.append(box);
+  }
+}
+
+function openPost(p){
+  const dlg=$('#dlg');dlg.textContent='';
+  dlg.append(h('div',{class:'row'},h('b',{class:'dtl'},fmtTime(p.ts)),h('span',{style:'flex:1'}),h('span',{class:'sub'},appNote(p.ts).trim()),h('button',{type:'button',onclick:()=>dlg.close()},'閉じる')),
+    ...p.images.map(im=>{const el=h('img',{alt:''});imgUrl(im).then(u=>{el.src=u;});return el;}),
+    ...(p.images.length<p.total?[h('div',{class:'sub'},p.images.length?`（${p.total}枚中${p.images.length}枚のみ表示）`:'（画像が見つからないため本文のみ表示）')]:[]),
+    h('pre',null,p.caption||'（本文なし）'));
+  dlg.showModal();
+}
+
+function setTab(t){
+  state.tab=t;
+  $('#t-grid').classList.toggle('on',t==='grid');$('#t-list').classList.toggle('on',t==='list');
+  render();
+}
+
+$('#pickzip').onclick=()=>$('#zipin').click();
+$('#zipin').onchange=e=>loadFiles([...e.target.files]);
+$('#pick').onclick=()=>$('#folder').click();
+$('#folder').onchange=e=>loadFiles([...e.target.files]);
+$('#sample').onclick=()=>{posts=sampleData();$('#status').textContent='サンプル（架空の投稿）を表示中';start();};
+$('#t-grid').onclick=()=>setTab('grid');$('#t-list').onclick=()=>setTab('list');
+$('#q').oninput=e=>{state.q=e.target.value;render();};
+$('#sort').onchange=e=>{state.sort=e.target.value;render();};
+</script>
+</body>
+</html>
