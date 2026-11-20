@@ -1,10 +1,11 @@
-<!doctype html>
+<!Doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src blob: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'">
-<title>自分のInstagram投稿 検索ツール</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+
+<title>自分のInstagram投稿 検索ツール | Hello! Tools</title>
 <meta name="description" content="Instagramの書き出しデータ（ZIP）を読み込んで、自分の過去の投稿を、日付・本文・サムネで探すツールです。データはブラウザの中だけで処理し、どこにも送信しません。">
 <meta property="og:title" content="自分のInstagram投稿 検索ツール">
 <meta property="og:description" content="Instagramの書き出しデータ（ZIP）を読み込んで、自分の過去の投稿を、日付・本文・サムネで探すツールです。データはブラウザの中だけで処理し、どこにも送信しません。">
@@ -12,27 +13,31 @@
 <meta property="og:site_name" content="Hello! Tools">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:url" content="https://tools.yxmxgxn.workers.dev/insta-search/">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/insta-search.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="自分のInstagram投稿 検索ツール">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/insta-search.png">
+<meta name="twitter:creator" content="@yxmxgxn">
 <link rel="canonical" href="https://tools.yxmxgxn.workers.dev/insta-search/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
 <style>
-:root{--bg:#fafafa;--fg:#1c1e21;--sub:#6b7280;--card:#fff;--line:#e5e7eb;--accent:#8C6BB8;--mark:#fff3a3}
-@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#ececec;--sub:#9ca3af;--card:#1e1e1e;--line:#333;--mark:#5c4b00}}
+:root{--page-w:980px;--mark:#fff3a3}
+@media (prefers-color-scheme:dark){:root{--mark:#5c4b00}}
 html{scrollbar-gutter:stable}
-@supports not (scrollbar-gutter:stable){html{overflow-y:scroll}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 "Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic",Meiryo,"Noto Sans JP",sans-serif;font-feature-settings:"palt"}
-main{max-width:980px;margin:0 auto;padding:16px}
-h1{font-size:20px;margin:8px 0}
-.safe{background:var(--card);border:1px solid var(--line);padding:10px 12px;border-radius:6px;font-size:13px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;margin:12px 0}
-button,select,input[type=search],input[type=date]{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
-button{cursor:pointer}button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.safe{background:var(--bg);border:1px solid var(--line);padding:10px 12px;border-radius:6px;font-size:13px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;margin:12px 0}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.tabs button{border-radius:6px 6px 0 0}.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tabs button{border-radius:var(--radius) var(--radius) 0 0}.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
 @media (max-width:560px){.grid{grid-template-columns:repeat(3,1fr)}.dt{font-size:11px;padding:0 5px;bottom:4px}}
 .tile{position:relative;aspect-ratio:1;background:var(--line);overflow:hidden;cursor:pointer;border-radius:3px}
 .tile img{width:100%;height:100%;object-fit:cover;display:block}
-.tile .txt{padding:6px;font-size:11px;color:var(--sub);overflow:hidden;height:100%}
+.tile .txt{padding:6px;font-size:11px;color:var(--muted);overflow:hidden;height:100%}
 .badge{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;padding:0 6px;border-radius:10px}
 .dt{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);background:#fff;color:#000;font-size:14px;font-weight:600;line-height:1.4;padding:1px 8px;border-radius:4px;white-space:nowrap;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
 .item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -42,42 +47,44 @@ button{cursor:pointer}button.primary{background:var(--accent);color:#fff;border-
 .item .body{flex:1;min-width:0}.item .date{color:var(--fg);font-size:16px;font-weight:600}
 .item .cap{white-space:pre-wrap;word-break:break-word}
 mark{background:var(--mark);color:inherit}
-.sub{color:var(--sub);font-size:13px}
-dialog{max-width:min(720px,96vw);width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);padding:14px}
+dialog{max-width:min(720px,96vw);width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);padding:14px}
 dialog::backdrop{background:rgba(0,0,0,.6)}
 dialog .dtl{font-size:19px}
 dialog img{max-width:100%;display:block;margin:6px auto;border-radius:4px}
 pre{white-space:pre-wrap;word-break:break-word;font:inherit;margin:8px 0}
-footer{text-align:center;color:var(--sub);font-size:14px;margin:24px 0}
 details summary{cursor:pointer}
 .hide{display:none!important}
-a{color:var(--accent)}
 .calhead{display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:8px}
 .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;max-width:420px;margin:0 auto}
-.calgrid .wd{text-align:center;font-size:11px;color:var(--sub)}
-.day{padding:4px 0;min-height:44px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--sub);opacity:.55;font-size:13px;line-height:1.2;cursor:default}
+.calgrid .wd{text-align:center;font-size:11px;color:var(--muted)}
+.day{padding:4px 0;min-height:44px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--muted);opacity:.55;font-size:13px;line-height:1.2;cursor:default}
 .day small{display:block;font-size:10px}
-.day.has{background:var(--card);color:var(--fg);opacity:1;border-color:var(--accent);cursor:pointer;font-weight:600}
+.day.has{background:var(--bg);color:var(--fg);opacity:1;border-color:var(--accent);cursor:pointer;font-weight:600}
 .day.sel{background:var(--accent);color:#fff}
 </style>
 </head>
 <body>
+
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
 <main>
 <h1>自分のInstagram投稿 検索ツール</h1>
 <div class="safe">これは<b>あなたのブラウザの中だけ</b>で動きます。データは<b>どこにも送信されません</b>。</div>
 
 <div class="card" id="loader">
   <div class="row">
-    <button class="primary" id="pickzip" type="button">ZIPファイルを選ぶ</button>
+    <button class="button-primary" id="pickzip" type="button">ZIPファイルを選ぶ</button>
     <button id="pick" type="button">解凍したフォルダを選ぶ</button>
     <input type="file" id="zipin" accept=".zip,application/zip" multiple class="hide">
     <input type="file" id="folder" webkitdirectory multiple class="hide">
     <button id="sample" type="button">サンプルで試す</button>
-    <span class="sub" id="status"></span>
+    <span class="hint-text" id="status"></span>
   </div>
-  <p class="sub" style="margin:8px 0 0">ファイルやフォルダを選ぶとき、ブラウザが「アップロードしますか？」と表示することがありますが、ブラウザの定型文です。実際には<b>どこにも送信されず</b>、このページがフォルダの中を調べるだけです。</p>
+  <p class="hint-text" style="margin:8px 0 0">ファイルやフォルダを選ぶとき、ブラウザが「アップロードしますか？」と表示することがありますが、ブラウザの定型文です。実際には<b>どこにも送信されず</b>、このページがフォルダの中を調べるだけです。</p>
   <details style="margin-top:10px"><summary>書き出しの取り方</summary>
-    <ol class="sub">
+    <ol class="hint-text">
       <li>パソコン：左の三本線（その他）＞ 設定 ＞ 一番上の<b>Metaアカウント</b> ＞ <b>あなたの情報とアクセス許可</b> ＞ <b>あなたの情報をエクスポート</b> ＞ <b>エクスポートを作成</b></li>
       <li>自分のInstagramのアカウント ＞ <b>デバイスにエクスポート</b></li>
       <li>情報をカスタマイズ：<b>「すべてをクリア」</b>を押して、<b>「あなたのInstagramアクティビティ」の「メディア」だけ</b>にチェック</li>
@@ -95,15 +102,20 @@ a{color:var(--accent)}
       <input type="search" id="q" placeholder="キーワード（スペースでAND、-語 で除外）" style="flex:1;min-width:160px">
       <select id="sort"><option value="desc">新しい順</option><option value="asc">古い順</option></select>
     </div>
-    <div class="sub" id="count" style="margin-top:6px"></div>
-    <div class="sub" style="margin-top:2px">見つけた投稿は、Instagramのアクティビティで日付を指定すると開けます（<a href="about#open">手順</a>）。アプリの日付は1日ずれることがあります。</div>
+    <div class="hint-text" id="count" style="margin-top:6px"></div>
+    <div class="hint-text" style="margin-top:2px">見つけた投稿は、Instagramのアクティビティで日付を指定すると開けます（<a href="about#open">手順</a>）。アプリの日付は1日ずれることがあります。</div>
   </div>
   <div id="cal" class="card"></div>
   <div id="view"></div>
 
 </div>
-<footer><a href="about">使い方・仕組み</a>　© 2026 @yxmxgxn</footer>
+<p class="related"><a href="about">使い方・仕組み</a>　／　<a href="/post-time/">SNS投稿日時ビューア</a></p>
 </main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
 
 <dialog id="dlg"></dialog>
 
@@ -343,7 +355,7 @@ function renderCal(){
   const head=h('div',{class:'calhead'},both?h('button',{type:'button',onclick:()=>move(-1),title:'前の月'},'◀'):null,ysel,msel,both?h('button',{type:'button',onclick:()=>move(1),title:'次の月'},'▶'):null);
   if(calY||calM){head.append(h('button',{type:'button',onclick:()=>{calY=0;calM=0;state.day='';render();}},'選択をクリア'));}
   box.append(head);
-  if(!both){box.append(h('div',{class:'sub',style:'text-align:center'},'年と月を両方選ぶと、日ごとのカレンダーが出ます'));return;}
+  if(!both){box.append(h('div',{class:'hint-text',style:'text-align:center'},'年と月を両方選ぶと、日ごとのカレンダーが出ます'));return;}
   const g=h('div',{class:'calgrid'});
   for(const w of ['日','月','火','水','木','金','土'])g.append(h('div',{class:'wd'},w));
   const first=new Date(calY,calM-1,1).getDay(),days=new Date(calY,calM,0).getDate();
@@ -404,19 +416,19 @@ function render(){
     for(const p of list){
       const th=h('div',{class:'th',onclick:()=>openPost(p)});
       if(p.total>1)th.append(h('span',{class:'badge'},'▣ '+p.total));
-      box.append(h('div',{class:'item'},th,h('div',{class:'body'},h('div',{class:'date'},fmtTime(p.ts)+appNote(p.ts)),h('div',{class:'cap'},p.caption?highlight(p.caption):h('span',{class:'sub'},'（本文なし）')))));
+      box.append(h('div',{class:'item'},th,h('div',{class:'body'},h('div',{class:'date'},fmtTime(p.ts)+appNote(p.ts)),h('div',{class:'cap'},p.caption?highlight(p.caption):h('span',{class:'hint-text'},'（本文なし）')))));
       lazyImg(th,p);
     }
-    if(!list.length)box.append(h('div',{class:'sub'},'該当する投稿がありません'));
+    if(!list.length)box.append(h('div',{class:'hint-text'},'該当する投稿がありません'));
     view.append(box);
   }
 }
 
 function openPost(p){
   const dlg=$('#dlg');dlg.textContent='';
-  dlg.append(h('div',{class:'row'},h('b',{class:'dtl'},fmtTime(p.ts)),h('span',{style:'flex:1'}),h('span',{class:'sub'},appNote(p.ts).trim()),h('button',{type:'button',onclick:()=>dlg.close()},'閉じる')),
+  dlg.append(h('div',{class:'row'},h('b',{class:'dtl'},fmtTime(p.ts)),h('span',{style:'flex:1'}),h('span',{class:'hint-text'},appNote(p.ts).trim()),h('button',{type:'button',onclick:()=>dlg.close()},'閉じる')),
     ...p.images.map(im=>{const el=h('img',{alt:''});imgUrl(im).then(u=>{el.src=u;});return el;}),
-    ...(p.images.length<p.total?[h('div',{class:'sub'},p.images.length?`（${p.total}枚中${p.images.length}枚のみ表示）`:'（画像が見つからないため本文のみ表示）')]:[]),
+    ...(p.images.length<p.total?[h('div',{class:'hint-text'},p.images.length?`（${p.total}枚中${p.images.length}枚のみ表示）`:'（画像が見つからないため本文のみ表示）')]:[]),
     h('pre',null,p.caption||'（本文なし）'));
   dlg.showModal();
 }
