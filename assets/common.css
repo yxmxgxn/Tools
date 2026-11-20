@@ -59,7 +59,10 @@ code {
   padding: 0.8rem 1rem;
 }
 .site-header .wrap { display: flex; justify-content: flex-end; padding-bottom: 0; }
-.site-header .brand { font-size: 13px; color: var(--muted); }
+.site-header .brand,
+.site-header .lang { font-size: 13px; color: var(--muted); }
+.site-header .wrap { gap: 1.2rem; align-items: baseline; }
+.site-header .lang { order: -1; }
 .site-footer {
   border-top: 1px solid var(--line);
   color: var(--muted);
