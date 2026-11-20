@@ -1,0 +1,216 @@
+<!Doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>X Post Context Search | Hello! Tools</title>
+<meta name="description" content="Paste an X (Twitter) post URL to generate a search command and link that shows what the author posted before and after it (from ±6 hours to ±7 days). No need to enter dates by hand.">
+<meta property="og:title" content="X Post Context Search">
+<meta property="og:description" content="Paste an X post URL to generate a search command and link that shows what the author posted around that post.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/en/post-context/">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/post-context.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="X Post Context Search">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/post-context.png">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/en/post-context/">
+<link rel="alternate" hreflang="ja" href="https://tools.yxmxgxn.workers.dev/post-context/">
+<link rel="alternate" hreflang="en" href="https://tools.yxmxgxn.workers.dev/en/post-context/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "X Post Context Search",
+  "inLanguage": "en",
+  "description": "Paste an X (Twitter) post URL to generate a search command and link that shows what the author posted before and after it (from ±6 hours to ±7 days). No need to enter dates by hand.",
+  "applicationCategory": "UtilityApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+}
+</script>
+
+<style>
+  #ctx-time-box { font-size: 14px; }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="lang" href="/post-context/" hreflang="ja" lang="ja">日本語</a><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <h1>X Post Context Search</h1>
+  Paste the URL of a post on X and this tool generates a search command and link that shows what the author said before and after that post.<br>
+  It works back from the post ID to the exact time the post was made, so you never have to type a date. The range is centered on the moment of the post, to the second.<br>
+
+  <div class="input-row">
+    <input type="text" id="ctx-url" placeholder="https://x.com/username/status/0000000000" autocomplete="off">
+  </div>
+
+  <div class="option-row">
+    <label>Range around the post
+      <select id="ctx-range">
+        <option value="21600">±6 hours</option>
+        <option value="43200">±12 hours</option>
+        <option value="86400" selected>±1 day</option>
+        <option value="259200">±3 days</option>
+        <option value="604800">±7 days</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="ctx-noreply"> Exclude replies</label>
+    <label><input type="checkbox" id="ctx-noquote"> Exclude quotes</label>
+    <label><input type="checkbox" id="ctx-withrt"> Include reposts</label>
+    <label><input type="checkbox" id="ctx-unixfmt"> Output in Unix seconds</label>
+  </div>
+
+  <div id="ctx-result" class="result" hidden>
+    <p id="ctx-time-box">Posted at (JST): <strong id="ctx-time"></strong></p>
+    <div class="output-row">
+      <code id="ctx-cmd" class="output"></code>
+      <button id="ctx-copy" type="button">Copy</button>
+    </div>
+    <a id="ctx-open" class="button-primary" target="_blank" rel="noopener noreferrer">Open this search in the "Latest" tab on X</a>
+  </div>
+  <p id="ctx-err" class="error-text" hidden></p>
+
+  <h2>Bookmarklets</h2>
+  Run one while you have a post open on X to jump straight to its surrounding posts, without copying and pasting the URL.<br>
+  On a PC, drag a button below to your bookmarks bar. On a phone, tap "Copy code", bookmark any page, then edit the bookmark and paste the code into the URL field.
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){var m=location.href.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]+)\/status(?:es)?\/(\d+)/);if(!m){alert('Run this on an X post page');return}if(m[1].toLowerCase()==='i'){alert('Open a post URL that includes the username');return}var s=Math.floor(Number((BigInt(m[2])>>22n)+1288834974657n)/1000);var r=86400;var p=function(n){return('0'+n).slice(-2)};var j=function(x){var d=new Date((x+32400)*1000);return d.getUTCFullYear()+'-'+p(d.getUTCMonth()+1)+'-'+p(d.getUTCDate())+'_'+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds())+'_JST'};window.open('https://x.com/search?q='+encodeURIComponent('from:'+m[1]+' since:'+j(s-r)+' until:'+j(s+r))+'\x26f=live')})();">Search 1 day around the post</a>
+    <button type="button" class="ctx-bml-copy">Copy code</button>
+  </div>
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){var m=location.href.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]+)\/status(?:es)?\/(\d+)/);if(!m){alert('Run this on an X post page');return}if(m[1].toLowerCase()==='i'){alert('Open a post URL that includes the username');return}var s=Math.floor(Number((BigInt(m[2])>>22n)+1288834974657n)/1000);var r=259200;var p=function(n){return('0'+n).slice(-2)};var j=function(x){var d=new Date((x+32400)*1000);return d.getUTCFullYear()+'-'+p(d.getUTCMonth()+1)+'-'+p(d.getUTCDate())+'_'+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds())+'_JST'};window.open('https://x.com/search?q='+encodeURIComponent('from:'+m[1]+' since:'+j(s-r)+' until:'+j(s+r))+'\x26f=live')})();">Search 3 days around the post</a>
+    <button type="button" class="ctx-bml-copy">Copy code</button>
+  </div>
+  <div class="bookmarklet">
+    <a class="button-primary" id="ctx-bml-open" href="#">Open in this tool (to choose the range and filters)</a>
+    <button type="button" class="ctx-bml-copy">Copy code</button>
+  </div>
+
+  <h2>When this is useful</h2>
+  <ul>
+    <li>You see a post and wonder, "What else was this person saying around that day?" You can follow the whole flow of what they posted before and after it.</li>
+    <li>You only see a comment on a repost, something like "RP &gt; ...", and can't tell what was reposted. Turn on "Include reposts" and search: the repost appears in the timeline at the time it was reposted, so you can identify what the comment was about. (This works around X's UI change that shows reposts and posts separately and makes it hard to read comments made after reposting.)</li>
+  </ul>
+
+  <h2>How it works</h2>
+  Every X post ID has its posting time embedded in it, down to the millisecond. This tool works the time back out of the ID and passes it to the search operators <code>since:</code> and <code>until:</code> as a date and time in Japan Standard Time (in a format like <code>2026-07-15_15:32:28_JST</code>) to cut out the surrounding period.<br>
+  Because <code>_JST</code> is written explicitly, the result doesn't depend on any time zone difference with UTC, and the range is exact to the second, centered on the moment of the post. Since the dates are plain date-times, you can widen or narrow the range afterward just by editing the numbers in the search box.<br>
+  With "Output in Unix seconds" on, the command uses <code>since_time:</code> / <code>until_time:</code> (Unix seconds) instead. Precision and time zone handling are the same.<br>
+  Note that the search itself runs on X, so posts from private accounts and deleted posts do not appear. The username in the URL may differ from the current one (for example after a rename).
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+<script>
+(function () {
+  var EPOCH = 1288834974657n;
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  function jstStr(sec) {
+    var d = new Date((sec + 9 * 3600) * 1000);
+    return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) +
+      "_" + pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds()) + "_JST";
+  }
+
+  function fail(msg) {
+    $("ctx-result").hidden = true;
+    $("ctx-err").textContent = msg;
+    $("ctx-err").hidden = msg === "";
+  }
+
+  function update() {
+    var m = $("ctx-url").value.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]+)\/status(?:es)?\/(\d+)/);
+    if (!m) {
+      fail($("ctx-url").value.trim() === "" ? "" :
+        "Couldn't read a username and post ID from that URL. Paste a URL of the form x.com/username/status/number.");
+      return;
+    }
+    var user = m[1];
+    var id = BigInt(m[2]);
+    if (user.toLowerCase() === "i") {
+      fail("This URL format doesn't include a username. Open the post and copy a URL of the form x.com/username/status/number.");
+      return;
+    }
+    if (id < 300000000000000n) {
+      fail("Posts from before November 2010 don't have a time in their ID, so this tool can't handle them.");
+      return;
+    }
+    $("ctx-err").hidden = true;
+    $("ctx-result").hidden = false;
+
+    var ms = Number((id >> 22n) + EPOCH);
+    var sec = Math.floor(ms / 1000);
+    var r = parseInt($("ctx-range").value, 10);
+
+    var jst = new Date(ms + 9 * 3600 * 1000);
+    $("ctx-time").textContent =
+      jst.getUTCFullYear() + "-" + pad(jst.getUTCMonth() + 1) + "-" + pad(jst.getUTCDate()) +
+      " " + pad(jst.getUTCHours()) + ":" + pad(jst.getUTCMinutes()) + ":" + pad(jst.getUTCSeconds());
+
+    var q;
+    if ($("ctx-unixfmt").checked) {
+      q = "from:" + user + " since_time:" + (sec - r) + " until_time:" + (sec + r);
+    } else {
+      q = "from:" + user + " since:" + jstStr(sec - r) + " until:" + jstStr(sec + r);
+    }
+    if ($("ctx-noreply").checked) q += " -filter:replies";
+    if ($("ctx-noquote").checked) q += " -filter:quote";
+    if ($("ctx-withrt").checked) q += " include:nativeretweets";
+
+    $("ctx-cmd").textContent = q;
+    $("ctx-open").href = "https://x.com/search?q=" + encodeURIComponent(q) + "&f=live";
+  }
+
+  ["ctx-url", "ctx-range", "ctx-noreply", "ctx-noquote", "ctx-withrt", "ctx-unixfmt"].forEach(function (id) {
+    $(id).addEventListener(id === "ctx-url" ? "input" : "change", update);
+  });
+
+  $("ctx-copy").addEventListener("click", function () {
+    navigator.clipboard.writeText($("ctx-cmd").textContent);
+    $("ctx-copy").textContent = "Copied";
+    setTimeout(function () { $("ctx-copy").textContent = "Copy"; }, 1500);
+  });
+
+  // The "Open in this tool" bookmarklet is generated to point at this page's own URL
+  // (so it is correct on whichever domain the site is hosted)
+  var toolUrl = location.origin + location.pathname;
+  $("ctx-bml-open").setAttribute(
+    "href",
+    "javascript:void(window.open('" + toolUrl + "?url='+encodeURIComponent(location.href)));"
+  );
+
+  document.querySelectorAll(".ctx-bml-copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      navigator.clipboard.writeText(btn.previousElementSibling.getAttribute("href"));
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = "Copy code"; }, 1500);
+    });
+  });
+
+  var pre = new URLSearchParams(location.search).get("url");
+  if (pre) $("ctx-url").value = pre;
+  update();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!Doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>YouTube URL Cleaner (Keeps the Timestamp) | Hello! Tools</title>
+<meta name="description" content="Clean up YouTube URLs by removing the share-tracking (si=), playlist and other extra parameters, while keeping the start time (t=). Bookmarklets included.">
+<meta property="og:title" content="YouTube URL Cleaner (Keeps the Timestamp)">
+<meta property="og:description" content="Clean up a YouTube URL by removing extra parameters. The start time (t=) is kept.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/en/youtube-clean/">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/youtube-clean.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="YouTube URL Cleaner (Keeps the Timestamp)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/youtube-clean.png">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/en/youtube-clean/">
+<link rel="alternate" hreflang="ja" href="https://tools.yxmxgxn.workers.dev/youtube-clean/">
+<link rel="alternate" hreflang="en" href="https://tools.yxmxgxn.workers.dev/en/youtube-clean/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "YouTube URL Cleaner (Keeps the Timestamp)",
+  "inLanguage": "en",
+  "description": "Clean up YouTube URLs by removing the share-tracking (si=), playlist and other extra parameters, while keeping the start time (t=).",
+  "applicationCategory": "UtilityApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+}
+</script>
+
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="lang" href="/youtube-clean/" hreflang="ja" lang="ja">日本語</a><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <h1>YouTube URL Cleaner</h1>
+  Removes extra parameters from a YouTube URL, such as the share-tracking parameter (<code>si=</code>) and playlist parameters.<br>
+  Unlike the usual "URL cleaner" tools, <strong>it keeps the start time (<code>t=</code>)</strong>, so you can still share a link that says "watch from this moment".<br>
+
+  <div class="input-row">
+    <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=xxxx&t=90s&si=..." autocomplete="off">
+  </div>
+
+  <div class="option-row">
+    <label><input type="checkbox" id="yt-short"> Use the short URL (youtu.be)</label>
+    <label><input type="checkbox" id="yt-notime"> Remove the start time (t=)</label>
+  </div>
+
+  <div id="yt-result" class="result" hidden>
+    <div class="output-row">
+      <code id="yt-out" class="output"></code>
+      <button id="yt-copy" type="button">Copy</button>
+    </div>
+    <a id="yt-open" class="button-primary" target="_blank" rel="noopener noreferrer">Open the cleaned URL</a>
+  </div>
+  <p id="yt-err" class="error-text" hidden></p>
+
+  <h2>Bookmarklet</h2>
+  Run it on a YouTube video page to copy the cleaned URL of the video you're watching (with <code>t=</code>) to the clipboard.<br>
+  On a PC, drag the button below to your bookmarks bar. On a phone, tap "Copy code", bookmark any page, then edit the bookmark and paste the code into the URL field.
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){function s(t){if(!t)return 0;if(/^\d+s?$/.test(t))return parseInt(t,10);var m=t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);return m?(+(m[1]||0))*3600+(+(m[2]||0))*60+(+(m[3]||0)):0}try{var u=new URL(location.href),h=u.hostname.replace(/^(www|m|music)\./,''),id='',p=u.pathname;if(h=='youtu.be')id=p.slice(1).split('/')[0];else if(h=='youtube.com'){if(p=='/watch')id=u.searchParams.get('v')||'';else{var m=p.match(/^\/(?:shorts|live|embed|v)\/([^\/?#]+)/);if(m)id=m[1]}}if(!id){alert('Run this on a YouTube video page');return}var sec=s(u.searchParams.get('t')||u.searchParams.get('start')||''),o='https://www.youtube.com/watch?v='+id+(sec>0?'&t='+sec+'s':'');navigator.clipboard.writeText(o).then(function(){alert('Copied:\n'+o)},function(){prompt('Copy this URL',o)})}catch(e){alert('Could not parse the URL')}})();">Copy YouTube URL</a>
+    <button type="button" class="yt-bml-copy">Copy code</button>
+  </div>
+
+  <hr class="tool-sep">
+
+  <h1>Other URLs (Remove Generic Parameters)</h1>
+  For non-YouTube URLs, this removes tracking parameters (<code>utm_*</code>, <code>fbclid</code>, <code>gclid</code>, <code>si</code>, and so on).<br>
+  To avoid breaking parameters a page needs to work, <strong>only known tracking parameters</strong> are removed and everything else is left as it is.<br>
+  <strong>Amazon</strong> URLs are a special case: they are cut down to the shortest form, <code>amazon.co.jp/dp/ASIN</code>, keeping only the product ID (ASIN).<br>
+
+  <div class="input-row">
+    <input type="text" id="gen-url" placeholder="https://example.com/page?utm_source=...&fbclid=..." autocomplete="off">
+  </div>
+
+  <div class="option-row">
+    <label><input type="checkbox" id="gen-all"> Remove the entire query (everything after ?) — strong mode</label>
+  </div>
+
+  <div id="gen-result" class="result" hidden>
+    <div class="output-row">
+      <code id="gen-out" class="output"></code>
+      <button id="gen-copy" type="button">Copy</button>
+    </div>
+    <a id="gen-open" class="button-primary" target="_blank" rel="noopener noreferrer">Open the cleaned URL</a>
+  </div>
+  <p id="gen-err" class="error-text" hidden></p>
+
+  <h2>Bookmarklet (Generic)</h2>
+  Run it on any non-YouTube page to copy that page's URL, without tracking parameters, to the clipboard.
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){var S=new Set(['fbclid','gclid','dclid','gbraid','wbraid','yclid','msclkid','mc_cid','mc_eid','igshid','igsh','si','ref_src','ref_url','spm','scm','mkt_tok','_hsenc','_hsmi','vero_id','vero_conv','oly_anon_id','oly_enc_id','__s','cmpid','ck_subscriber_id','twclid','ttclid','rb_clickid','_openstat']);try{var u=new URL(location.href),keep=[];if(/(^|\.)amazon\./i.test(u.hostname)){var am=u.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d|product)\/([A-Za-z0-9]{10})(?:[\/?]|$)/);if(am){var az='https://'+u.hostname+'/dp/'+am[1].toUpperCase();navigator.clipboard.writeText(az).then(function(){alert('Copied:\n'+az)},function(){prompt('Copy this URL',az)});return}}u.searchParams.forEach(function(v,k){var lk=k.toLowerCase();if(lk.indexOf('utm_')===0)return;if(S.has(lk))return;keep.push([k,v])});u.search='';keep.forEach(function(p){u.searchParams.append(p[0],p[1])});var o=u.toString();navigator.clipboard.writeText(o).then(function(){alert('Copied:\n'+o)},function(){prompt('Copy this URL',o)})}catch(e){alert('Could not parse the URL')}})();">Clean the URL and copy it</a>
+    <button type="button" class="yt-bml-copy">Copy code</button>
+  </div>
+
+  <h2>Bookmarklet (Strong Mode)</h2>
+  Copies the URL with the whole query (everything after <code>?</code>) removed. Use this when tracking survives in a site's own custom parameters.
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){try{var u=new URL(location.href);u.search='';var o=u.toString();navigator.clipboard.writeText(o).then(function(){alert('Copied:\n'+o)},function(){prompt('Copy this URL',o)})}catch(e){alert('Could not parse the URL')}})();">Remove the whole query and copy</a>
+    <button type="button" class="yt-bml-copy">Copy code</button>
+  </div>
+
+  <hr class="tool-sep">
+
+  <h2>What is removed and what is kept (YouTube)</h2>
+  <ul>
+    <li><strong>Kept:</strong> the video ID and the start time (<code>t=</code> or <code>start=</code>). Forms like <code>1m30s</code> are normalized to seconds (<code>90</code>).</li>
+    <li><strong>Removed:</strong> <code>si=</code> (share tracking), <code>pp=</code>, <code>feature=</code>, <code>ab_channel=</code>, <code>list=</code> / <code>index=</code> (playlist context), <code>utm_*</code>, and everything else that isn't needed to play the video.</li>
+    <li>Supported URL types: <code>watch</code>, <code>youtu.be</code>, <code>shorts</code>, <code>live</code>, <code>embed</code>, and the <code>m.</code> and <code>music.</code> hosts.</li>
+    <li><strong>Short URL (youtu.be):</strong> off gives <code>youtube.com/watch?v=ID&amp;t=90s</code> (the long form, with an s); on gives <code>youtu.be/ID?t=90</code> (youtu.be, no s — the same form as YouTube's own share links).</li>
+    <li><strong>Remove the start time (t=):</strong> when on, the start position is dropped and you get a URL for the video only.</li>
+  </ul>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+
+  function toSec(t) {
+    if (!t) return 0;
+    if (/^\d+s?$/.test(t)) return parseInt(t, 10);
+    var m = t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+    return m ? (+(m[1] || 0)) * 3600 + (+(m[2] || 0)) * 60 + (+(m[3] || 0)) : 0;
+  }
+
+  // Pull the video ID and start seconds out of the input. Returns id:"" if there is none
+  function parse(raw) {
+    raw = raw.trim();
+    if (raw === "") return { id: "", sec: 0 };
+    // A bare video ID was pasted
+    if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return { id: raw, sec: 0 };
+    var u;
+    try { u = new URL(raw); } catch (e) { return null; }
+    var host = u.hostname.replace(/^(www|m|music)\./, "");
+    var id = "", p = u.pathname;
+    if (host === "youtu.be") {
+      id = p.slice(1).split("/")[0];
+    } else if (host === "youtube.com") {
+      if (p === "/watch") id = u.searchParams.get("v") || "";
+      else {
+        var m = p.match(/^\/(?:shorts|live|embed|v)\/([^\/?#]+)/);
+        if (m) id = m[1];
+      }
+    } else {
+      return null;
+    }
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return { id: "", sec: 0 };
+    return { id: id, sec: toSec(u.searchParams.get("t") || u.searchParams.get("start") || "") };
+  }
+
+  function build(id, sec) {
+    // "Remove the start time" drops t= when on
+    var t = $("yt-notime").checked ? 0 : sec;
+    if ($("yt-short").checked) {
+      // youtu.be has no trailing s (the same form as YouTube's own share links)
+      return "https://youtu.be/" + id + (t > 0 ? "?t=" + t : "");
+    }
+    // The watch form has the trailing s
+    return "https://www.youtube.com/watch?v=" + id + (t > 0 ? "&t=" + t + "s" : "");
+  }
+
+  function fail(msg) {
+    $("yt-result").hidden = true;
+    $("yt-err").textContent = msg;
+    $("yt-err").hidden = msg === "";
+  }
+
+  function update() {
+    var r = parse($("yt-url").value);
+    if (r === null || (r && r.id === "" && $("yt-url").value.trim() !== "")) {
+      fail("Couldn't read that as a YouTube URL. Paste the URL of a video.");
+      return;
+    }
+    if (r.id === "") { fail(""); return; }
+    $("yt-err").hidden = true;
+    $("yt-result").hidden = false;
+    var out = build(r.id, r.sec);
+    $("yt-out").textContent = out;
+    $("yt-open").href = out;
+  }
+
+  ["yt-url", "yt-short", "yt-notime"].forEach(function (id) {
+    $(id).addEventListener(id === "yt-url" ? "input" : "change", update);
+  });
+
+  $("yt-copy").addEventListener("click", function () {
+    navigator.clipboard.writeText($("yt-out").textContent);
+    $("yt-copy").textContent = "Copied";
+    setTimeout(function () { $("yt-copy").textContent = "Copy"; }, 1500);
+  });
+
+  document.querySelectorAll(".yt-bml-copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      navigator.clipboard.writeText(btn.previousElementSibling.getAttribute("href"));
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = "Copy code"; }, 1500);
+    });
+  });
+
+  // ---- Generic parameter removal ----
+  // Remove only known tracking parameters (leave the rest so nothing breaks)
+  var STRIP = {};
+  ["fbclid","gclid","dclid","gbraid","wbraid","yclid","msclkid",
+   "mc_cid","mc_eid","igshid","igsh","si","ref_src","ref_url",
+   "spm","scm","mkt_tok","_hsenc","_hsmi","vero_id","vero_conv",
+   "oly_anon_id","oly_enc_id","__s","cmpid","ck_subscriber_id",
+   "twclid","ttclid","rb_clickid","_openstat"].forEach(function (k) { STRIP[k] = 1; });
+
+  // Shorten Amazon URLs to just the product ID (ASIN). Returns null if there is no ASIN
+  function amazonShort(u) {
+    if (!/(^|\.)amazon\./i.test(u.hostname)) return null;
+    var m = u.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d|product)\/([A-Za-z0-9]{10})(?:[/?]|$)/);
+    if (!m) return null;
+    return "https://" + u.hostname + "/dp/" + m[1].toUpperCase();
+  }
+
+  function cleanGeneric(raw) {
+    raw = raw.trim();
+    if (raw === "") return { url: "", ok: true };
+    var u;
+    try { u = new URL(raw); } catch (e) { return { url: "", ok: false }; }
+    // Amazon always gets the shortest form (/dp/ASIN), in any mode
+    var az = amazonShort(u);
+    if (az) return { url: az, ok: true };
+    if ($("gen-all").checked) {
+      // Strong mode: remove the whole query
+      u.search = "";
+      return { url: u.toString(), ok: true };
+    }
+    var keep = [];
+    u.searchParams.forEach(function (v, k) {
+      var lk = k.toLowerCase();
+      if (lk.indexOf("utm_") === 0) return;
+      if (STRIP[lk]) return;
+      keep.push([k, v]);
+    });
+    u.search = "";
+    keep.forEach(function (p) { u.searchParams.append(p[0], p[1]); });
+    return { url: u.toString(), ok: true };
+  }
+
+  function genUpdate() {
+    var r = cleanGeneric($("gen-url").value);
+    if (!r.ok) {
+      $("gen-result").hidden = true;
+      $("gen-err").textContent = "Couldn't read that as a URL. Paste a URL that starts with http(s)://.";
+      $("gen-err").hidden = false;
+      return;
+    }
+    $("gen-err").hidden = true;
+    if (r.url === "") { $("gen-result").hidden = true; return; }
+    $("gen-result").hidden = false;
+    $("gen-out").textContent = r.url;
+    $("gen-open").href = r.url;
+  }
+
+  $("gen-url").addEventListener("input", genUpdate);
+  $("gen-all").addEventListener("change", genUpdate);
+  $("gen-copy").addEventListener("click", function () {
+    navigator.clipboard.writeText($("gen-out").textContent);
+    $("gen-copy").textContent = "Copied";
+    setTimeout(function () { $("gen-copy").textContent = "Copy"; }, 1500);
+  });
+
+  var pre = new URLSearchParams(location.search).get("url");
+  if (pre) $("yt-url").value = pre;
+  update();
+  genUpdate();
+})();
+</script>
+</body>
+</html>
