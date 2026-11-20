@@ -1,44 +1,51 @@
-<!doctype html>
+<!Doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
-<title>使い方・仕組み｜自分のInstagram投稿 検索ツール</title>
-<meta property="og:title" content="使い方・仕組み｜自分のInstagram投稿 検索ツール">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; base-uri 'none'; form-action 'none'">
+
+<title>使い方・仕組み | 自分のInstagram投稿 検索ツール | Hello! Tools</title>
+<meta name="description" content="自分のInstagram投稿 検索ツールの使い方と仕組み、データの扱い、日付のずれ、制限について。">
+<meta property="og:title" content="使い方・仕組み | 自分のInstagram投稿 検索ツール">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Hello! Tools">
 <meta property="og:locale" content="ja_JP">
-<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/insta-search/about.html">
-<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/insta-search/about.html">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/insta-search/about">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/insta-search.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="使い方・仕組み | 自分のInstagram投稿 検索ツール">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/insta-search.png">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/insta-search/about">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
 <style>
-:root{--bg:#fafafa;--fg:#1c1e21;--sub:#6b7280;--card:#fff;--line:#e5e7eb;--accent:#8C6BB8}
-@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#ececec;--sub:#9ca3af;--card:#1e1e1e;--line:#333}}
-*{box-sizing:border-box}
+:root{--page-w:980px}
 html{scrollbar-gutter:stable}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.8 "Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic",Meiryo,"Noto Sans JP",sans-serif;font-feature-settings:"palt"}
-main{max-width:980px;margin:0 auto;padding:16px 16px 40px}
-h1{font-size:22px;margin:8px 0 4px}
-h2{font-size:18px;margin:32px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--accent)}
-h3{font-size:15px;margin:20px 0 4px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:12px 0}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:12px 0}
 .safe{}
 .note{border-left:4px solid var(--accent)}
 ol,ul{padding-left:1.4em;margin:6px 0}
 li{margin:4px 0}
-.sub{color:var(--sub);font-size:13px}
-code{background:var(--line);padding:0 4px;border-radius:3px;font-size:13px}
 table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{border:1px solid var(--line);padding:6px 8px;text-align:left}
-a{color:var(--accent)}
-footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
 </style>
 </head>
 <body>
+
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
 <main>
-<p class="sub"><a href="./">← ツールに戻る</a></p>
+<p class="hint-text"><a href="./">← ツールに戻る</a></p>
 <h1>使い方・仕組み</h1>
-<p class="sub">自分のInstagram投稿 検索ツール</p>
+<p class="hint-text">自分のInstagram投稿 検索ツール</p>
 
 <div class="card safe">
   <b>基本は、パソコンでの作業をおすすめします。</b><br>
@@ -53,7 +60,7 @@ footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
   <li><b>検索のコツ:</b> 単語をスペースで区切ると、すべてを含む投稿（AND）になります。単語の前に <code>-</code> を付けると、その語を含む投稿を除外します（例: <code>ラーメン -味玉</code>）。全角・半角や大文字・小文字の違いは区別しません。</li>
   <li>投稿の日時、本文、画像をまとめて見られます。複数枚の投稿には枚数のバッジが付きます。</li>
 </ul>
-<p class="sub">Instagramには、自分の投稿を本文で検索する機能がありません。「あの日の投稿を消したい」ときに、サムネを延々とスクロールして探すしかないのが、作った理由です。</p>
+<p class="hint-text">Instagramには、自分の投稿を本文で検索する機能がありません。「あの日の投稿を消したい」ときに、サムネを延々とスクロールして探すしかないのが、作った理由です。</p>
 
 <h2>1. データを書き出す</h2>
 <p>書き出せるのは本人だけです。最初に必要なのは<b>「メディア」だけ</b>です。DM・広告・個人情報などは、選ばなくて大丈夫です（このツールは読みません）。</p>
@@ -67,14 +74,14 @@ footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
   <li><b>情報をカスタマイズ</b>：「すべてをクリア」を押してから、<b>「あなたのInstagramアクティビティ」の「メディア」だけ</b>にチェック</li>
   <li><b>期間：全期間</b>（初期値のままだと、過去の一部だけになることがあります）</li>
   <li><b>フォーマット：JSON</b>（HTMLは対応していません）</li>
-  <li><b>メディアの画質</b>：お好きな画質。<span class="sub">探すだけなら低画質のほうが早く書き出せます。</span></li>
+  <li><b>メディアの画質</b>：お好きな画質。<span class="hint-text">探すだけなら低画質のほうが早く書き出せます。</span></li>
 </ol>
 
 <h3>スマートフォンのアプリ（Android）</h3>
 <div class="card">
   <p style="margin:4px 0">右上の三本線 ＞ <b>Metaアカウント</b> を開き、あとはパソコンと同じ手順で選びます（上の3番目から）。</p>
 </div>
-<p class="sub">iPhoneの手順は、確認できていないのでここには書いていません。</p>
+<p class="hint-text">iPhoneの手順は、確認できていないのでここには書いていません。</p>
 
 <div class="card note">
   <b>書き出しには時間がかかります。</b>完了すると通知（メール）が届くので、届いたらZIPをダウンロードしてください。ZIPは<b>解凍せずに</b>そのまま使えます。
@@ -87,7 +94,7 @@ footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
   <li>「◯◯件の投稿が見つかりました」と出たら、準備完了です。</li>
   <li>まず試したいときは <b>「サンプルで試す」</b>。架空の投稿が表示されます（自分のデータは使いません）。</li>
 </ol>
-<p class="sub">ブラウザが「アップロードしますか？」と表示することがありますが、ブラウザの定型文です。どこにも送信されません（「6. 安全性」を参照）。</p>
+<p class="hint-text">ブラウザが「アップロードしますか？」と表示することがありますが、ブラウザの定型文です。どこにも送信されません（「6. 安全性」を参照）。</p>
 
 <h2 id="open">3. 見つけた投稿を、アプリで開く</h2>
 <p>ツールで投稿の日付が分かったら、Instagramの「アクティビティ」で、同じ日付の投稿を表示します。ここから、見るだけでなく、削除などもできます。</p>
@@ -105,7 +112,7 @@ footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
   <li>上部中央の <b>「すべての期間」</b> ＞ <b>期間</b></li>
   <li><b>開始日</b>と<b>終了日</b>を、該当の日時の付近に指定</li>
 </ol>
-<p class="sub">アプリの日付は、ツールの表示と1日ずれることがあります（次の「4. 日付と時間帯のずれ」を参照）。<b>前後に数日の幅をもたせて</b>指定すると、確実に見つかります。</p>
+<p class="hint-text">アプリの日付は、ツールの表示と1日ずれることがあります（次の「4. 日付と時間帯のずれ」を参照）。<b>前後に数日の幅をもたせて</b>指定すると、確実に見つかります。</p>
 
 <h2>4. 日付と時間帯のずれについて</h2>
 <div class="card note">
@@ -121,7 +128,7 @@ footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
   <tr><td>冬（11月ごろ〜3月ごろ）</td><td>17時間</td></tr>
   <tr><td>夏（3月ごろ〜11月ごろ・夏時間）</td><td>16時間</td></tr>
 </table>
-<p class="sub">この「西海岸時間」は、私が実際に確認できた範囲（冬と夏の投稿1件ずつ）からの推測です。確認した範囲では、アプリの表示と一致しました。</p>
+<p class="hint-text">この「西海岸時間」は、私が実際に確認できた範囲（冬と夏の投稿1件ずつ）からの推測です。確認した範囲では、アプリの表示と一致しました。</p>
 
 <h2>5. 元の投稿のURLに飛べない理由</h2>
 <p>書き出しデータには、<b>自分の投稿のURL（<code>instagram.com/p/…</code>）が入っていません</b>。「全部盛り」のJSON、メディアだけのJSON、HTML形式で試しましたが、どれも同じでした。URLが入っていたのは、他の人の投稿を見た・いいねした・保存した記録だけです。</p>
@@ -131,7 +138,7 @@ footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
 <div class="card safe">
   <ul style="margin:4px 0">
     <li>ページの中にある通信を止める設定（<code>Content-Security-Policy</code>）で、外部への送信をブラウザが拒否します。</li>
-    <li>外部のサーバー、CDN、外部フォント、ライブラリは使っていません。ZIPの解凍もブラウザの標準機能です。</li>
+    <li>外部のサーバーやライブラリは使っていません。ZIPの解凍もブラウザの標準機能です。画面の文字（フォント）だけは、このサイトの共通のスタイルシートが、Google Fontsから読み込みます。あなたの投稿のデータは、フォントの読み込みとは無関係で、送信されません。</li>
     <li>ログイン、パスワード、アカウント連携は一切ありません。</li>
     <li><b>位置情報（緯度・経度）、端末情報は読み込みません・表示しません。</b>読むのは、投稿の画像・本文・日時だけです。</li>
     <li>DM・広告・個人情報などのファイルは、読みません。</li>
@@ -148,7 +155,6 @@ footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
   <li>複数の書き出しを一度に選んだときは、最初の1つだけを使います。</li>
 </ul>
 
-<footer>© 2026 @yxmxgxn</footer>
 <h2>8. 関連ツール</h2>
 <div class="card">
   <b><a href="/post-time/">SNS投稿日時ビューア</a></b><br>
@@ -156,5 +162,10 @@ footer{text-align:center;color:var(--sub);font-size:14px;margin:32px 0 0}
 </div>
 
 </main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
 </body>
 </html>
