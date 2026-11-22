@@ -3,7 +3,9 @@
 //
 //   POST /api/shorten   本文 {v:1, title, loop, items:[{id,s,e,label}]} → {"code": "Ab3xK9qZ", "url": "https://…/Ab3xK9qZ"}
 //   GET  /api/status    短縮が使えるか（KVが付いているか）→ {"ok": true|false}
-//   GET  /<code>        短縮URL。長いURL /?c=... へ転送する
+//   GET  /<code>        短縮URL。トップと同じ画面を返し、画面が /api/clip/<code> で中身を読む
+//                       （アドレス欄は短縮URLのまま。編集したら画面側で長いURLに切り替わる）
+//   GET  /api/clip/<code>  短縮URLの中身 → {"code", "data": {v:1, ...}}
 //   それ以外            public/ の静的ファイルを返す
 //
 // 短縮URLは「共有した時点のプレイリスト」を預かって短い名前を付けるだけのシェア専用URL。
@@ -19,6 +21,7 @@
 
 const SHORTEN_PATH = '/api/shorten';
 const STATUS_PATH = '/api/status';
+const CLIP_RE = /^\/api\/clip\/([0-9A-Za-z]{8,12})$/;
 // 短縮コードは英数字8〜12文字。静的ファイル（.を含む）やほかのページ名とは重ならない
 const SHORT_RE = /^\/([0-9A-Za-z]{8,12})\/?$/;
 
@@ -148,38 +151,60 @@ async function handleShorten(request, env) {
   return json({ error: '発行できませんでした。もう一度試してください' }, 500);
 }
 
-async function handleShort(request, env, code) {
-  // コードの形をしていても、保存されていなければ、ふつうのページ（静的ファイル）として扱う
-  const notFound = (msg) => new Response(
-    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
-    `<title>見つかりません | Cliplist</title>` +
-    `<p style="font-family:sans-serif;padding:1rem">${msg}</p>` +
-    `<p style="font-family:sans-serif;padding:0 1rem"><a href="/">Cliplist を開く</a></p>`,
-    { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
-  if (!env || !env.CLIPS) return notFound('短縮URLはいま使えません。');
+// 保存済みの中身を読む。無い・読めないときは null
+async function loadClip(env, code) {
+  if (!env || !env.CLIPS) return null;
   const raw = await env.CLIPS.get(code);
-  if (raw === null) {
-    const res = env.ASSETS ? await env.ASSETS.fetch(request) : null;
-    if (res && res.status !== 404) return res;
-    return notFound('この短縮URLのプレイリストは見つかりませんでした。');
-  }
+  if (raw === null) return null;
   let data = null;
   try { data = JSON.parse(raw); } catch (e) {}
   // 版ごとに読み分ける。いまは第1版だけ
-  if (!data || data.v !== 1) return notFound('この短縮URLのプレイリストを読めませんでした。');
-  const q = toQueryV1(data);
-  // 中身は書き換えないので、転送先はしばらくキャッシュしてよい
-  return new Response(null, {
-    status: 302,
-    headers: { location: `/?${q}`, 'cache-control': 'public, max-age=3600' },
+  return data && data.v === 1 ? data : null;
+}
+
+const notFound = (msg) => new Response(
+  `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
+  `<title>見つかりません | Cliplist</title>` +
+  `<p style="font-family:sans-serif;padding:1rem">${msg}</p>` +
+  `<p style="font-family:sans-serif;padding:0 1rem"><a href="/">Cliplist を開く</a></p>`,
+  { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+
+// 短縮URL（/<code>）。中身があれば、トップと同じ画面を返す（中身は画面が /api/clip で読む）
+async function handleShort(request, env, code) {
+  const data = await loadClip(env, code);
+  if (!data) {
+    // コードの形をしていても、保存されていなければ、ふつうのページ（静的ファイル）として扱う
+    const res = env && env.ASSETS ? await env.ASSETS.fetch(request) : null;
+    if (res && res.status !== 404) return res;
+    return notFound('この短縮URLのプレイリストは見つかりませんでした。');
+  }
+  const top = new URL('/', request.url);
+  return env.ASSETS.fetch(new Request(top.toString(), { method: request.method, headers: request.headers }));
+}
+
+// 短縮URLの中身。発行後は変わらないので、長めにキャッシュしてよい
+async function handleClip(env, code) {
+  const data = await loadClip(env, code);
+  if (!data) return json({ error: '見つかりませんでした' }, 404);
+  return new Response(JSON.stringify({ code, data }), {
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'public, max-age=86400',
+      'x-content-type-options': 'nosniff',
+    },
   });
 }
+
+// 版つきデータから長いURL（第1版）を作る処理 toQueryV1 は、今は使っていないが、
+// 長いURLの形を変えるときの読み替えの基準として残しておく
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === SHORTEN_PATH) return handleShorten(request, env);
     if (url.pathname === STATUS_PATH) return json({ ok: !!(env && env.CLIPS) });
+    const c = url.pathname.match(CLIP_RE);
+    if (c && request.method === 'GET') return handleClip(env, c[1]);
     const m = url.pathname.match(SHORT_RE);
     if (m && (request.method === 'GET' || request.method === 'HEAD')) return handleShort(request, env, m[1]);
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });

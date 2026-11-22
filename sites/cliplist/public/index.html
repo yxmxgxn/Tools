@@ -411,12 +411,13 @@
   function shareWithLabels() { return $("share-labels").checked; }
   function shareUrl() {
     var q = encodeState(shareWithLabels());
-    return location.origin + location.pathname + (q ? "?" + q : "");
+    return location.origin + "/" + (q ? "?" + q : "");
   }
 
   function commit() {
     var q = encodeState();
-    try { history.replaceState(null, "", location.pathname + (q ? "?" + q : "")); } catch (e) {}
+    // 短縮URLで開いていても、編集したら長いURL（/?c=...）に切り替える
+    try { history.replaceState(null, "", "/" + (q ? "?" + q : "")); } catch (e) {}
     try { localStorage.setItem(STORE_KEY, q); } catch (e) {}
     render();
   }
@@ -1212,30 +1213,67 @@
   // ---------- 起動 ----------
   // ?url= で動画を渡されたら、追加フォームに入れておく（下で URL を書き換える前に読む）
   var pre = new URLSearchParams(location.search).get("url");
-  var fromUrl = decodeQuery(location.search);
-  if (fromUrl.items.length) {
-    // 共有リンクで開いたとき。自分の保存分は、編集するまで上書きしない
-    state = fromUrl;
+  var shortMatch = location.pathname.match(/^\/([0-9A-Za-z]{8,12})\/?$/);
+
+  function showSharedBanner() {
     $("shared-banner").hidden = false;
     $("shared-text").textContent = (state.title ? "「" + state.title + "」" : "共有されたプレイリスト") + "（" + state.items.length + "区間）です。";
+  }
+  function cueFirst() {
+    whenReady(function () {
+      var it = state.items[0];
+      if (it && mode === "idle") player.cueVideoById({ videoId: it.id, startSeconds: it.s });
+    });
+  }
+
+  if (shortMatch) {
+    // 短縮URL（/<コード>）で開いたとき。中身をもらって表示する。
+    // 編集するまでは、アドレス欄は短縮URLのまま。自分の保存分も上書きしない
+    var code = shortMatch[1];
+    fetch("/api/clip/" + code)
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (j) {
+        var d = j && j.data;
+        if (!d || d.v !== 1 || !Array.isArray(d.items)) throw new Error("bad");
+        state = {
+          title: d.title || "", loop: !!d.loop,
+          items: d.items.map(function (it) { return { id: it.id, s: it.s, e: it.e == null ? null : it.e, label: it.label || "" }; })
+        };
+        // 同じ中身なら同じ短縮URLなので、共有欄にもそのまま出しておく
+        lastShort = { key: JSON.stringify(shortData()), url: location.origin + "/" + code };
+        showSharedBanner();
+        render();
+        cueFirst();
+      })
+      .catch(function () {
+        $("shared-banner").hidden = false;
+        $("shared-text").textContent = "共有されたプレイリストを読み込めませんでした。通信環境を確認して、ページを再読み込みしてください。";
+        $("shared-play").hidden = true;
+        render();
+      });
   } else {
-    var saved = null;
-    try { saved = localStorage.getItem(STORE_KEY); } catch (e) {}
-    if (saved) {
-      state = decodeQuery(saved);
-      try { history.replaceState(null, "", location.pathname + (saved ? "?" + saved : "")); } catch (e) {}
+    var fromUrl = decodeQuery(location.search);
+    if (fromUrl.items.length) {
+      // 共有リンクで開いたとき。自分の保存分は、編集するまで上書きしない
+      state = fromUrl;
+      showSharedBanner();
+    } else {
+      var saved = null;
+      try { saved = localStorage.getItem(STORE_KEY); } catch (e) {}
+      if (saved) {
+        state = decodeQuery(saved);
+        try { history.replaceState(null, "", "/" + (saved ? "?" + saved : "")); } catch (e) {}
+      }
     }
   }
   $("shared-play").addEventListener("click", function () { playIndex(0); });
 
   if (pre) { $("f-url").value = pre; $("f-url").dispatchEvent(new Event("input")); }
 
-  // プレイヤーには最初の区間を出しておく（自動再生はしない）
-  whenReady(function () {
-    var it = state.items[0];
-    if (it && mode === "idle") player.cueVideoById({ videoId: it.id, startSeconds: it.s });
-  });
+  // プレイヤーには最初の区間を出しておく（自動再生はしない）。短縮URLのときは読み込んでから
+  if (!shortMatch) cueFirst();
   render();
+  if (shortMatch && !state.items.length) $("now-text").textContent = "共有されたプレイリストを読み込んでいます…";
 })();
 </script>
 </body>
