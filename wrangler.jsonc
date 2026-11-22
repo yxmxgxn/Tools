@@ -5,12 +5,17 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/sns-account-lookup/api"]
+    "run_worker_first": ["/sns-account-lookup/api", "/yt-clips/api/*", "/yt-clips/s/*"]
   },
   // 投稿URLからアカウントを調べるAPIの回数制限（worker/index.js が使う）。
   // 1人あたり60秒に8回、全体で60秒に120回まで。拠点ごとの数え上げなので、きっちりした数ではない
   "ratelimits": [
     { "name": "LOOKUP_LIMITER", "namespace_id": "1001", "simple": { "limit": 8, "period": 60 } },
-    { "name": "LOOKUP_GLOBAL", "namespace_id": "1002", "simple": { "limit": 120, "period": 60 } }
+    { "name": "LOOKUP_GLOBAL", "namespace_id": "1002", "simple": { "limit": 120, "period": 60 } },
+    // YouTube区間プレイリストの短縮URLの発行（worker/clips.js）。1人あたり60秒に10回まで
+    { "name": "SHORTEN_LIMITER", "namespace_id": "1003", "simple": { "limit": 10, "period": 60 } }
   ]
+  // 短縮URLの保存先（KV）。用意できたら、下の行のコメントを外して id を入れる。
+  // 付いていない間は、短縮ボタンが出ないだけで、長いURLはそのまま動く
+  // , "kv_namespaces": [{ "binding": "CLIPS", "id": "ここにKVのID" }]
 }

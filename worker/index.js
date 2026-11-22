@@ -10,6 +10,8 @@
 //  - 1回の件数・文字数の上限、IPごとの回数制限
 //  - 入力・結果は保存しない、ログに書かない
 
+import { handleClips, CLIPS_PREFIX } from './clips.js';
+
 const API_PATH = '/sns-account-lookup/api';
 const MAX_LINES = 5;
 const MAX_LEN = 300;
@@ -261,6 +263,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === API_PATH) return handleLookup(request, env);
+    // YouTube区間プレイリストの短縮URL（worker/clips.js）
+    if (url.pathname.startsWith(CLIPS_PREFIX)) {
+      const res = await handleClips(request, env);
+      if (res) return res;
+    }
     // run_worker_first で API_PATH 以外はここに来ないが、念のため静的ファイルへ回す
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
   },

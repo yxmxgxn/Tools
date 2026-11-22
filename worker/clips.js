@@ -1,0 +1,159 @@
+// YouTube区間プレイリスト（/yt-clips/）の短縮URL。
+//
+//   POST /yt-clips/api/shorten   本文 {"q": "c=...&c=..."} → {"code": "Ab3xK9q", "url": "https://…/yt-clips/s/Ab3xK9q"}
+//   GET  /yt-clips/api/status    短縮が使えるか（KVが付いているか）→ {"ok": true|false}
+//   GET  /yt-clips/s/<code>      長いURL /yt-clips/?c=... へ転送する
+//
+// 長いURL（プレイリストをまるごとクエリに入れたもの）は、これまでどおりそのまま動く。
+// 短縮URLは「長いURLの中身を預かって、短い名前を付ける」だけ。
+//
+// 安全のための作り方
+//  - 預かるのはプレイリストとして正しい中身だけ。届いたクエリを読み直して、
+//    動画ID・秒・ラベルを検査し、作り直したものだけを保存する（任意の文字列は保存しない）
+//  - 同じ中身には同じ短縮コード（中身のハッシュから作る）。保存したものは書き換えない
+//  - このサイトの画面からのPOSTだけを受け付ける。大きさと回数に上限を付ける
+//  - KV（CLIPS）が付いていないときは、短縮は使えない（status が ok:false を返す）
+
+export const CLIPS_PREFIX = '/yt-clips/';
+const SHORTEN_PATH = '/yt-clips/api/shorten';
+const STATUS_PATH = '/yt-clips/api/status';
+const SHORT_RE = /^\/yt-clips\/s\/([0-9A-Za-z]{6,12})\/?$/;
+
+const MAX_BODY = 32_000;
+const MAX_ITEMS = 300;
+const MAX_LABEL = 60;
+const MAX_TITLE = 80;
+const MAX_SEC = 360_000;        // 100時間。ライブ配信のアーカイブでも足りる長さ
+const ID_RE = /^[A-Za-z0-9_-]{11}$/;
+const B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const RATE_MAX = 20;            // 1人あたり、10分に発行できる回数（Workerのメモリによる簡易な制限）
+const RATE_WINDOW_MS = 600_000;
+
+const json = (obj, status = 200) =>
+  new Response(JSON.stringify(obj), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+
+const hits = new Map();
+function rateHit(ip) {
+  const now = Date.now();
+  const arr = (hits.get(ip) || []).filter((t) => t > now - RATE_WINDOW_MS);
+  if (arr.length >= RATE_MAX) { hits.set(ip, arr); return true; }
+  arr.push(now);
+  hits.set(ip, arr);
+  if (hits.size > 5000) hits.clear();
+  return false;
+}
+
+// 画面側（yt-clips/index.html の encodeState）と同じ書き方にそろえる
+const enc = (s) => encodeURIComponent(s).replace(/%7E/gi, '~');
+const fmtNum = (x) => String(Math.round(x * 10) / 10);
+// 制御文字を消して、前後の空白を落とす
+const clean = (s, max) => String(s).replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
+
+// 届いたクエリを、プレイリストとして読み直して作り直す。読めなければ null
+export function canonicalQuery(qs) {
+  const p = new URLSearchParams(String(qs).replace(/^\?/, ''));
+  const parts = [];
+  const title = clean(p.get('title') || '', MAX_TITLE);
+  if (title) parts.push('title=' + enc(title));
+  let n = 0;
+  for (const v of p.getAll('c')) {
+    if (n >= MAX_ITEMS) break;
+    const a = v.split('~');
+    if (!ID_RE.test(a[0] || '')) continue;
+    let s = parseFloat(a[1]);
+    if (!Number.isFinite(s) || s < 0) s = 0;
+    if (s > MAX_SEC) continue;
+    let e = a[2] === '' || a[2] == null ? null : parseFloat(a[2]);
+    if (e != null && (!Number.isFinite(e) || e <= s || e > MAX_SEC)) e = null;
+    const label = clean(a.slice(3).join('~'), MAX_LABEL);
+    let item = a[0] + '~' + fmtNum(s) + '~' + (e == null ? '' : fmtNum(e));
+    if (label) item += '~' + label;
+    parts.push('c=' + enc(item));
+    n++;
+  }
+  if (!n) return null;
+  if (p.get('loop') === '1') parts.push('loop=1');
+  return parts.join('&');
+}
+
+async function codeFor(text, len) {
+  const buf = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
+  let n = 0n;
+  for (const b of buf) n = (n << 8n) | BigInt(b);
+  let out = '';
+  for (let i = 0; i < len; i++) { out += B62[Number(n % 62n)]; n /= 62n; }
+  return out;
+}
+
+async function handleShorten(request, env) {
+  if (request.method !== 'POST') return json({ error: 'POSTで送ってください' }, 405);
+  if (!env || !env.CLIPS) return json({ error: '短縮URLはいま使えません' }, 503);
+
+  const site = request.headers.get('sec-fetch-site') || '';
+  if (site && site !== 'same-origin') return json({ error: 'このサイトの画面からだけ使えます' }, 403);
+  const origin = request.headers.get('origin') || '';
+  if (origin) {
+    let oh = '';
+    try { oh = new URL(origin).host; } catch (e) {}
+    if (oh !== new URL(request.url).host) return json({ error: 'このサイトの画面からだけ使えます' }, 403);
+  }
+
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  if (env.SHORTEN_LIMITER) {
+    const { success } = await env.SHORTEN_LIMITER.limit({ key: ip });
+    if (!success) return json({ error: '短い時間に発行しすぎです。しばらくしてからもう一度試してください' }, 429);
+  }
+  if (rateHit(ip)) return json({ error: '短い時間に発行しすぎです。しばらくしてからもう一度試してください' }, 429);
+
+  const raw = await request.text();
+  if (raw.length > MAX_BODY) return json({ error: 'プレイリストが大きすぎます' }, 413);
+  let q = '';
+  try { q = String(JSON.parse(raw).q || ''); } catch (e) { return json({ error: '形式が正しくありません' }, 400); }
+  const canon = canonicalQuery(q);
+  if (!canon) return json({ error: '区間がひとつもありません' }, 400);
+
+  // 中身から短縮コードを作る。万一ほかの中身と重なったら、1文字ずつ長くする
+  for (let len = 7; len <= 12; len++) {
+    const code = await codeFor(canon, len);
+    const have = await env.CLIPS.get(code);
+    if (have === null) await env.CLIPS.put(code, canon);
+    else if (have !== canon) continue;
+    const base = new URL(request.url).origin;
+    return json({ code, url: `${base}${CLIPS_PREFIX}s/${code}` });
+  }
+  return json({ error: '発行できませんでした。もう一度試してください' }, 500);
+}
+
+async function handleShort(request, env, code) {
+  const notFound = (msg) => new Response(
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
+    `<title>見つかりません | YouTube区間プレイリスト</title>` +
+    `<p style="font-family:sans-serif;padding:1rem">${msg}</p>` +
+    `<p style="font-family:sans-serif;padding:0 1rem"><a href="${CLIPS_PREFIX}">YouTube区間プレイリストを開く</a></p>`,
+    { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+  if (!env || !env.CLIPS) return notFound('短縮URLはいま使えません。');
+  const q = await env.CLIPS.get(code);
+  if (q === null) return notFound('この短縮URLのプレイリストは見つかりませんでした。');
+  // 中身は書き換えないので、転送先はしばらくキャッシュしてよい
+  return new Response(null, {
+    status: 302,
+    headers: { location: `${CLIPS_PREFIX}?${q}`, 'cache-control': 'public, max-age=3600' },
+  });
+}
+
+// /yt-clips/ 以下のうち、このWorkerが受け持つパスなら Response を、そうでなければ null を返す
+export async function handleClips(request, env) {
+  const url = new URL(request.url);
+  if (url.pathname === SHORTEN_PATH) return handleShorten(request, env);
+  if (url.pathname === STATUS_PATH) return json({ ok: !!(env && env.CLIPS) });
+  const m = url.pathname.match(SHORT_RE);
+  if (m && (request.method === 'GET' || request.method === 'HEAD')) return handleShort(request, env, m[1]);
+  return null;
+}
