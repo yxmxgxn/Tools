@@ -15,8 +15,8 @@
   // 短縮URLの発行の回数制限。1人あたり60秒に10回まで
   "ratelimits": [
     { "name": "SHORTEN_LIMITER", "namespace_id": "2001", "simple": { "limit": 10, "period": 60 } }
-  ]
-  // 短縮URLの保存先（KV）。用意できたら、下の行のコメントを外して id を入れる。
-  // 付いていない間は、短縮ボタンが出ないだけで、長いURLはそのまま動く
-  // , "kv_namespaces": [{ "binding": "CLIPS", "id": "ここにKVのID" }]
+  ],
+  // 短縮URLの保存先（KV。ダッシュボードでの名前は cliplist）。
+  // 外すと短縮ボタンが出なくなるだけで、長いURLはそのまま動く
+  "kv_namespaces": [{ "binding": "CLIPS", "id": "549ea2d8271948f6852e591825593c21" }]
 }
