@@ -41,6 +41,17 @@
 <style>
   /* ヘッダーを置かないので、見出しが上端に付かないよう余白を取る */
   main { padding-top: 1.5rem; }
+  .lead { margin: 0.25rem 0 0; }
+  .lead-links { margin-left: 0.6em; font-size: 13px; white-space: nowrap; }
+  .lead-links a { color: var(--muted); text-decoration: underline; }
+  details.io { margin: 1.5rem 0 0; border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 0.9rem; }
+  details.io > summary { cursor: pointer; font-size: 14px; }
+  details.io h3 { margin: 1rem 0 0.25rem; font-weight: 700; font-size: 14px; }
+  .doc { margin-top: 3rem; padding-top: 0.5rem; border-top: 1px solid var(--line); font-size: 14px; }
+  .doc h3 { font-weight: 700; margin: 1.25rem 0 0.25rem; }
+  .doc ul { padding-left: 1.2em; margin: 0.25rem 0; }
+  .doc li { margin: 0.2rem 0; }
+  .doc pre.code { background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-all; }
   .h1-sub { font-size: 0.95rem; font-weight: normal; color: var(--muted); margin-left: 0.6em; }
   /* 赤(#FF0000)の上の白い文字は細いと読みにくいので、太字にする */
   .button-primary { font-weight: 700; }
@@ -159,8 +170,7 @@
 
 <main>
   <h1>Cliplist<span class="h1-sub">クリップリスト</span></h1>
-  YouTube動画の<strong>好きな区間（開始〜終了）だけ</strong>を並べて、順番に続けて再生します。<br>
-  プレイリストは<strong>URLにまるごと入る</strong>ので、下の「共有」からリンクを送るだけで、相手も同じ順番・同じ区間で再生できます。登録やログインはいりません。
+  <p class="lead">YouTubeの好きな区間をつないで再生。リンクひとつで共有できます。<span class="lead-links"><a href="#about">使い方</a> ・ <a href="#tech">仕組み</a></span></p>
 
   <div id="shared-banner" class="shared-banner" hidden>
     <p id="shared-text">共有されたプレイリストです。</p>
@@ -184,8 +194,7 @@
   </div>
 
   <h2>プレイリスト</h2>
-  <input type="text" id="pl-title" class="playlist-title" placeholder="プレイリストの名前（任意・共有URLに入ります）" maxlength="80" autocomplete="off">
-  <p class="hint-text" style="margin:0.25rem 0 0">左端の <b>≡</b> をつかんで上下にドラッグすると、順番を入れ替えられます。</p>
+  <input type="text" id="pl-title" class="playlist-title" placeholder="プレイリストの名前（任意）" maxlength="80" autocomplete="off">
   <ol id="clip-list" class="clip-list"></ol>
   <div class="form-buttons">
     <p id="total" class="total" style="flex:1"></p>
@@ -212,7 +221,7 @@
     </div>
 
     <label for="f-label">ラベル</label>
-    <input type="text" id="f-label" class="wide" placeholder="任意（例: 2番サビ）。空ならタイトルを表示" maxlength="60" autocomplete="off">
+    <input type="text" id="f-label" class="wide" placeholder="任意（例: 2番サビ）" maxlength="60" autocomplete="off">
   </div>
   <div class="form-buttons">
     <button type="button" id="f-preview">プレビューで開く</button>
@@ -220,16 +229,11 @@
     <button type="button" id="f-cancel" hidden>キャンセル</button>
   </div>
   <p id="f-err" class="error-text" hidden></p>
-  <p class="hint-text">時間は <code>83</code>・<code>1:23</code>・<code>1:02:03</code>・<code>1m23s</code> のどれでも入力できます。URLに <code>t=</code> が付いていれば開始に自動で入ります。<br>
-  「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。入力欄で Enter を押しても追加できます。<br>
-  <code>-10</code>〜<code>+10</code> で秒をずらせます。プレビュー中なら、プレイヤーもその位置に飛ぶので、聞きながら合わせられます。</p>
 
   <h2>共有</h2>
-  <p class="hint-text" style="margin:0">このURLにプレイリストがまるごと入っています。アドレスバーのURLは、編集中のすべて（チャプター名も）が入った形で自動で更新されます。</p>
   <div class="option-row">
     <label><input type="checkbox" id="share-labels" checked> チャプター名を共有URLに入れる</label>
   </div>
-  <p class="hint-text" style="margin:-0.5rem 0 0">外すとURLが短くなります。開いた人の画面には、チャプター名のかわりに動画のタイトルが出ます。</p>
   <div class="result">
     <div class="output-row">
       <code id="share-url" class="output"></code>
@@ -249,56 +253,115 @@
         <button type="button" id="short-copy">コピー</button>
         <button type="button" id="short-share" hidden>共有…</button>
       </div>
-      <p id="short-msg" class="hint-text" style="margin:0.25rem 0 0">短縮URLは、発行した時点のプレイリストで固定されます。あとで編集したら、もう一度発行してください（前に配ったURLは、そのときの内容のまま残ります）。</p>
+      <p id="short-msg" class="hint-text" style="margin:0.25rem 0 0">短縮URLは、発行した時点の内容で固定されます。</p>
     </div>
+  </div>
 
-  <h2>表計算で編集（CSV / TSV）</h2>
-  <p class="hint-text" style="margin:0">プレイリストを「動画ID・開始・終了・チャプター名」の表で書き出して、Excel や Googleスプレッドシートで編集し、また読み込めます。</p>
-  <div class="share-buttons">
-    <button type="button" id="ex-csv">CSVで保存</button>
-    <button type="button" id="ex-tsv">TSVで保存</button>
-    <button type="button" id="ex-copy" title="Googleスプレッドシートなどにそのまま貼り付けられます">表としてコピー</button>
-  </div>
-  <div class="option-row">
-    <span>読み込み方:</span>
-    <label><input type="radio" name="imp-mode" value="replace" checked> 今のリストと置き換える</label>
-    <label><input type="radio" name="imp-mode" value="append"> 末尾に追加する</label>
-  </div>
-  <div class="share-buttons">
-    <label class="button-primary" for="imp-file" style="margin:0">CSV / TSV ファイルを読み込む</label>
-    <input type="file" id="imp-file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" hidden>
-  </div>
-  <details class="howto">
-    <summary>表を貼り付けて読み込む</summary>
-    <textarea id="imp-text" rows="5" placeholder="動画ID&#9;開始(秒)&#9;終了(秒)&#9;チャプター名&#10;dQw4w9WgXcQ&#9;43&#9;47.5&#9;サビ"></textarea>
-    <div class="form-buttons" style="margin-top:6px">
-      <button type="button" id="imp-paste">読み込む</button>
+  <details class="io">
+    <summary>CSV / TSV で書き出し・読み込み、まとめて追加</summary>
+
+    <h3>CSV / TSV</h3>
+    <div class="share-buttons">
+      <button type="button" id="ex-csv">CSVで保存</button>
+      <button type="button" id="ex-tsv">TSVで保存</button>
+      <button type="button" id="ex-copy" title="Googleスプレッドシートなどにそのまま貼り付けられます">表としてコピー</button>
     </div>
-  </details>
-  <p id="imp-msg" class="hint-text"></p>
-  <p class="hint-text">編集するのは <b>1〜4列目（動画ID, 開始(秒), 終了(秒), チャプター名）</b>だけです。1列目はURLでもかまいません。終了が空なら最後まで。1行目の見出しはあってもなくても大丈夫です。<br>
-  時間は秒の数値（<code>83.5</code> など）で書き出します。<code>1:23</code> のような形だと、Excel が時刻として読み替えて保存時に崩すことがあるためです。読み込みは <code>83</code>・<code>1:23</code>・<code>0:01:23</code> のどれでも大丈夫です。<br>
-  5列目以降（開始・終了の表示とURL）は見るための列で、読み込みでは使いません。</p>
+    <div class="option-row">
+      <span>読み込み方:</span>
+      <label><input type="radio" name="imp-mode" value="replace" checked> 今のリストと置き換える</label>
+      <label><input type="radio" name="imp-mode" value="append"> 末尾に追加する</label>
+    </div>
+    <div class="share-buttons">
+      <label class="button-primary" for="imp-file" style="margin:0">CSV / TSV ファイルを読み込む</label>
+      <input type="file" id="imp-file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" hidden>
+    </div>
+    <details class="howto">
+      <summary>表を貼り付けて読み込む</summary>
+      <textarea id="imp-text" rows="5" placeholder="動画ID&#9;開始(秒)&#9;終了(秒)&#9;チャプター名&#10;dQw4w9WgXcQ&#9;43&#9;47.5&#9;サビ"></textarea>
+      <div class="form-buttons" style="margin-top:6px">
+        <button type="button" id="imp-paste">読み込む</button>
+      </div>
+    </details>
+    <p id="imp-msg" class="hint-text"></p>
 
-  <h2>まとめて追加</h2>
-  <details class="howto">
-    <summary>URLを何行も貼って一気に追加する</summary>
-    <p class="hint-text">1行に1区間。<code>URL 開始-終了 ラベル</code> の順で書きます（開始・終了・ラベルは省略可）。このツールの共有URLを貼ると、その中身を全部追加します。</p>
-    <textarea id="bulk" rows="5" placeholder="https://youtu.be/xxxx 1:23-2:45 1番サビ&#10;https://www.youtube.com/watch?v=yyyy&t=60 1:00-1:30&#10;https://youtu.be/zzzz"></textarea>
+    <h3>まとめて追加</h3>
+    <textarea id="bulk" rows="4" placeholder="https://youtu.be/xxxx 1:23-2:45 1番サビ&#10;https://www.youtube.com/watch?v=yyyy&t=60 1:00-1:30&#10;https://youtu.be/zzzz"></textarea>
     <div class="form-buttons" style="margin-top:6px">
       <button type="button" id="bulk-add">まとめて追加</button>
       <span id="bulk-msg" class="hint-text"></span>
     </div>
   </details>
 
-  <h2>メモ</h2>
-  <ul class="hint-text">
-    <li>再生はYouTube公式の埋め込みプレイヤーです。<strong>埋め込みが禁止されている動画は再生できない</strong>ので、自動で次へ飛ばします。</li>
-    <li>広告が入ることがあります。広告のあとに区間の続きから再生されます。</li>
-    <li>スマホでは、最初の1回だけ ▶ を押す必要があります（ブラウザの自動再生の制限のため）。</li>
-    <li>プレイリストはURLとこのブラウザの中にだけ保存されます。サーバーには何も保存しません。</li>
-    <li>区間が多すぎてURLが長くなると、SNSによっては途中で切れることがあります。そのときは「テキストでコピー」も使えます。</li>
-  </ul>
+  <section class="doc" id="about">
+    <h2>About</h2>
+    <p>Cliplist（クリップリスト）は、YouTube動画の好きな区間（開始〜終了）だけを並べて、続けて再生するプレイリストです。ライブの好きな場面、番組の名セリフ、曲のサビだけ…を、リンクひとつで人に渡せます。登録やログインはいりません。</p>
+
+    <h3>区間を作る</h3>
+    <ul>
+      <li>動画のURLを貼って、開始と終了を入れて「追加」。入力欄で Enter を押しても追加できます。URLに <code>t=</code> が付いていれば、開始に自動で入ります。</li>
+      <li>時間は <code>83</code>・<code>1:23</code>・<code>1:02:03</code>・<code>1m23s</code> のどれでも入力できます。終了を空にすると、動画の最後までです。</li>
+      <li>「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。</li>
+      <li><code>-10</code>〜<code>+10</code> で秒をずらせます。プレビュー中は、プレイヤーもその位置に飛ぶので、聞きながら合わせられます。</li>
+      <li>再生中に「＋ ここから区間を作る」を押すと、その動画と今の位置が追加フォームに入ります。</li>
+    </ul>
+
+    <h3>並べる・直す</h3>
+    <ul>
+      <li>区間の左端の <b>≡</b> をつかんで上下にドラッグすると、順番を入れ替えられます（指でも動きます）。</li>
+      <li>「編集」で開始・終了・ラベルを直せます。「削除」はすぐ消えますが、数秒のあいだ「元に戻す」が出ます。</li>
+    </ul>
+
+    <h3>共有する</h3>
+    <ul>
+      <li>プレイリストは<strong>URLにまるごと入ります</strong>。「URLをコピー」して送れば、相手も同じ順番・同じ区間で再生できます。アドレス欄のURLも、編集するたびに同じ形に更新されます。</li>
+      <li>「チャプター名を共有URLに入れる」を外すと、URLが短くなります。開いた人の画面には、チャプター名のかわりに動画のタイトルが出ます。</li>
+      <li>「短縮URLを発行」すると、<code>cliplist.yxmxgxn.workers.dev/Ab3xK9qZ</code> のような短いURLが作れます。<strong>発行した時点の内容で固定</strong>され、あとから変わることはありません。内容を変えたら、もう一度発行してください（前に配ったURLは、そのときの内容のまま残ります）。同じ内容なら、同じ短縮URLになります。</li>
+      <li>短縮URLで開いた人が編集すると、アドレス欄はふつうの長いURLに切り替わります。</li>
+      <li>区間が多すぎてURLが長くなると、SNSによっては途中で切れることがあります。そのときは短縮URLか「テキストでコピー」を使ってください。</li>
+    </ul>
+
+    <h3>表計算で編集する（CSV / TSV）</h3>
+    <ul>
+      <li>「動画ID, 開始(秒), 終了(秒), チャプター名」の表で書き出して、Excel や Googleスプレッドシートで編集し、また読み込めます。</li>
+      <li>編集するのは1〜4列目だけです。1列目はURLでもかまいません。1行目の見出しはあってもなくても大丈夫です。5列目以降（開始・終了の表示とURL）は見るための列で、読み込みでは使いません。</li>
+      <li>時間は秒の数値（<code>83.5</code> など）で書き出します。<code>1:23</code> のような形だと、Excel が時刻として読み替えて崩すことがあるためです。読み込みは <code>83</code>・<code>1:23</code>・<code>0:01:23</code> のどれでも大丈夫です。</li>
+      <li>「まとめて追加」は、1行に1区間、<code>URL 開始-終了 ラベル</code> の順で書きます（開始・終了・ラベルは省略可）。Cliplist の共有URLを貼ると、その中身を全部追加します。</li>
+    </ul>
+
+    <h3>気をつけること</h3>
+    <ul>
+      <li>再生はYouTube公式の埋め込みプレイヤーです。<strong>埋め込みが禁止されている動画は再生できない</strong>ので、印を付けて次へ飛ばします。読み込めない区間も、何度かやり直してから次へ進みます。</li>
+      <li>広告が入ることがあります。広告のあとに区間の続きから再生されます。</li>
+      <li>スマホでは、最初の1回だけ ▶ を押す必要があります（ブラウザの自動再生の制限のため）。自動で次へ進めなかったときも ▶ を押してください。</li>
+      <li>編集中のプレイリストは、このブラウザの中に保存されます。サーバーに送るのは「短縮URLを発行」したときだけで、そのときのプレイリスト（動画ID・時間・チャプター名・タイトル）を保存します。名前やアカウントなど、ほかの情報は送りません。</li>
+    </ul>
+  </section>
+
+  <section class="doc" id="tech">
+    <h2>Tech</h2>
+    <h3>長いURL（第1版）</h3>
+    <p>プレイリストをまるごとクエリに入れます。区間の数だけ <code>c</code> を並べます。</p>
+    <pre class="code">https://cliplist.yxmxgxn.workers.dev/?title=名前&amp;c=動画ID~開始秒~終了秒~チャプター名&amp;c=…&amp;loop=1</pre>
+    <ul>
+      <li>開始秒・終了秒は0.1秒単位の数値。終了が空なら最後まで。<code>title</code>・チャプター名・<code>loop</code> は省略できます。</li>
+      <li><strong>この形は固定します。</strong>あとで形を変えるときは <code>v=2</code> のような版の印を付けて区別し、印のないURLはずっと第1版として読みます。一度配ったURLが開けなくなることはありません。</li>
+    </ul>
+
+    <h3>短縮URL</h3>
+    <ul>
+      <li><code>/&lt;8文字の英数字&gt;</code>。共有した時点のプレイリストを預かって、短い名前を付けるだけのシェア専用URLです。編集・削除はありません。</li>
+      <li>中身はURLの文字列ではなく、版つきのデータ <code>{v:1, title, loop, items:[{id, s, e, label}]}</code> として保存します。URLの書き方を変えても、保存済みの短縮URLは読めます。</li>
+      <li>短縮コードは中身のハッシュ（SHA-256）から作るので、同じ中身なら同じコードになります。万一ほかの中身と重なったときは、1文字ずつ長くします。</li>
+      <li>保存するのは、動画ID・時間・チャプター名・タイトル・くり返しの設定だけです。届いた中身は検査して作り直してから保存します。</li>
+    </ul>
+
+    <h3>作り</h3>
+    <ul>
+      <li>画面は1枚のHTMLで、再生は YouTube IFrame Player API。区間の終わりは <code>endSeconds</code> と0.2秒ごとの監視の両方で見ています。</li>
+      <li>配信と短縮URLは Cloudflare Workers、短縮URLの保存先は Workers KV です。</li>
+      <li>動画のタイトルは YouTube の oEmbed から取ります（URLには入れません）。</li>
+    </ul>
+  </section>
 </main>
 
 <footer class="site-footer">
