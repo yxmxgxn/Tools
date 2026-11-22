@@ -1,0 +1,22 @@
+// Cliplist（https://cliplist.yxmxgxn.workers.dev/）
+// YouTubeの好きな区間をつないで再生するプレイリストのサイト。ツール集（リポジトリ直下）とは別のWorker。
+// デプロイ: .github/workflows/deploy.yml が sites/cliplist で wrangler deploy する
+{
+  "name": "cliplist",
+  "compatibility_date": "2026-08-26",
+  "main": "./worker/index.js",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // 短縮URL（/<コード>）と /api/* を Worker で受けるため、先に Worker を通す
+    "run_worker_first": true
+  },
+  // 短縮URLの発行の回数制限。1人あたり60秒に10回まで
+  "ratelimits": [
+    { "name": "SHORTEN_LIMITER", "namespace_id": "2001", "simple": { "limit": 10, "period": 60 } }
+  ],
+  // 短縮URLの保存先（KV。ダッシュボードでの名前は cliplist）。
+  // 外すと短縮ボタンが出なくなるだけで、長いURLはそのまま動く
+  "kv_namespaces": [{ "binding": "CLIPS", "id": "549ea2d8271948f6852e591825593c21" }]
+}

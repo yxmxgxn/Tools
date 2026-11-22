@@ -21,6 +21,23 @@ tools/
 - `worker/` は配信用の `public/` には入れない（`build/build.sh` で除外）。
 - 回数制限は、`wrangler.jsonc` の `ratelimits`（Cloudflareの Rate Limiting バインディング）で、1人あたり60秒に8回（`LOOKUP_LIMITER`）、全体で60秒に120回（`LOOKUP_GLOBAL`）。あわせて、Workerのメモリによる簡易な制限もある。拠点ごとの数え上げなので、きっちりした数ではない。
 
+## 別サイト：Cliplist（sites/cliplist）
+
+YouTubeの好きな区間をつないで再生するプレイリストのサイト（https://cliplist.yxmxgxn.workers.dev/）。
+ツール集とは別の Worker として、同じリポジトリから配信する。ツール集のビルド（`build/build.sh`）には含めない。
+
+```
+sites/cliplist/
+├─ wrangler.jsonc      … Worker の設定（名前 cliplist）
+├─ worker/index.js     … 短縮URL（/<コード>）と /api/shorten・/api/status。それ以外は public/ を返す
+└─ public/             … 画面（index.html）・OGP画像・共通CSSとファビコンの写し
+```
+
+- デプロイは `.github/workflows/deploy.yml` が、ツール集の前に `sites/cliplist` で `wrangler deploy` する。
+- **URLの互換性**: 長いURL `/?c=動画ID~開始秒~終了秒~チャプター名` は第1版として固定。形を変えるときは版の印（`v=2` など）を付け、印の無いURLは第1版としてずっと読めるようにする。
+- **短縮URL**は「共有した時点で固定するシェア専用URL」。編集・削除はない。中身は版つきのデータ `{v:1, title, loop, items:[{id,s,e,label}]}` で KV に保存し、開かれたら長いURL（第1版）へ転送する。同じ中身なら同じコード。
+- 短縮URLの保存先 KV は、Cloudflare で作ったあと、`sites/cliplist/wrangler.jsonc` の `kv_namespaces`（バインディング名 `CLIPS`）に ID を書く。付いていない間は短縮ボタンが出ないだけで、長いURLはそのまま動く。
+
 ## 新しいツールの足し方
 
 1. `ツール名/index.html` を作る（`/assets/common.css` を読み込む）

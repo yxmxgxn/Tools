@@ -4,22 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>YouTube区間プレイリスト | Hello! Tools</title>
+<title>Cliplist（クリップリスト）｜YouTubeの好きな区間をつないで再生</title>
 <meta name="description" content="YouTube動画の好きな区間(開始〜終了)だけを並べて、順番に続けて再生するプレイリストを作ります。プレイリストはURLに入るので、リンクを送るだけで共有できます。登録・ログイン不要。">
-<meta property="og:title" content="YouTube区間プレイリスト">
+<meta property="og:title" content="Cliplist（クリップリスト）">
 <meta property="og:description" content="YouTubeの好きな区間だけを並べて続けて再生。リンクを送るだけで共有できます。">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:site_name" content="Cliplist">
 <meta property="og:locale" content="ja_JP">
-<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/yt-clips/">
-<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/yt-clips.png">
+<meta property="og:url" content="https://cliplist.yxmxgxn.workers.dev/">
+<meta property="og:image" content="https://cliplist.yxmxgxn.workers.dev/ogp.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="YouTube区間プレイリスト">
+<meta property="og:image:alt" content="Cliplist（クリップリスト）">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/yt-clips.png">
+<meta name="twitter:image" content="https://cliplist.yxmxgxn.workers.dev/ogp.png">
 <meta name="twitter:creator" content="@yxmxgxn">
-<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/yt-clips/">
+<link rel="canonical" href="https://cliplist.yxmxgxn.workers.dev/">
 <link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
 <link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
@@ -29,7 +29,8 @@
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "YouTube区間プレイリスト",
+  "name": "Cliplist（クリップリスト）",
+  "url": "https://cliplist.yxmxgxn.workers.dev/",
   "description": "YouTube動画の好きな区間(開始〜終了)だけを並べて、順番に続けて再生するプレイリストを作ります。プレイリストはURLに入るので、リンクを送るだけで共有できます。",
   "applicationCategory": "MultimediaApplication",
   "operatingSystem": "Any",
@@ -38,6 +39,11 @@
 </script>
 
 <style>
+  /* ヘッダーを置かないので、見出しが上端に付かないよう余白を取る */
+  main { padding-top: 1.5rem; }
+  .h1-sub { font-size: 0.95rem; font-weight: normal; color: var(--muted); margin-left: 0.6em; }
+  /* 赤(#FF0000)の上の白い文字は細いと読みにくいので、太字にする */
+  .button-primary { font-weight: 700; }
   /* display を指定した部品でも hidden で確実に隠れるようにする（指定がないと hidden が効かない） */
   [hidden] { display: none !important; }
 
@@ -150,12 +156,9 @@
 
 <body>
 
-<header class="site-header">
-  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
-</header>
 
 <main>
-  <h1>YouTube区間プレイリスト</h1>
+  <h1>Cliplist<span class="h1-sub">クリップリスト</span></h1>
   YouTube動画の<strong>好きな区間（開始〜終了）だけ</strong>を並べて、順番に続けて再生します。<br>
   プレイリストは<strong>URLにまるごと入る</strong>ので、下の「共有」からリンクを送るだけで、相手も同じ順番・同じ区間で再生できます。登録やログインはいりません。
 
@@ -237,7 +240,17 @@
       <button type="button" id="share-text">テキストでコピー</button>
     </div>
     <p id="share-warn" class="hint-text" hidden></p>
-  </div>
+    <div id="short-box" hidden>
+      <div class="share-buttons">
+        <button type="button" id="short-make">短縮URLを発行</button>
+      </div>
+      <div id="short-row" class="output-row" hidden>
+        <code id="short-url" class="output"></code>
+        <button type="button" id="short-copy">コピー</button>
+        <button type="button" id="short-share" hidden>共有…</button>
+      </div>
+      <p id="short-msg" class="hint-text" style="margin:0.25rem 0 0">短縮URLは、発行した時点のプレイリストで固定されます。あとで編集したら、もう一度発行してください（前に配ったURLは、そのときの内容のまま残ります）。</p>
+    </div>
 
   <h2>表計算で編集（CSV / TSV）</h2>
   <p class="hint-text" style="margin:0">プレイリストを「動画ID・開始・終了・チャプター名」の表で書き出して、Excel や Googleスプレッドシートで編集し、また読み込めます。</p>
@@ -299,8 +312,8 @@
   "use strict";
   function $(id) { return document.getElementById(id); }
 
-  var STORE_KEY = "yt-clips:last";
-  var TITLE_KEY = "yt-clips:titles";
+  var STORE_KEY = "cliplist:last";
+  var TITLE_KEY = "cliplist:titles";
   var ID_RE = /^[A-Za-z0-9_-]{11}$/;
 
   // ---------- 状態 ----------
@@ -394,7 +407,7 @@
     return out;
   }
   // 共有用のURL。アドレスバーや保存は常にチャプター名入り、共有だけ「入れる／入れない」を選べる
-  var SHARE_LABELS_KEY = "yt-clips:share-labels";
+  var SHARE_LABELS_KEY = "cliplist:share-labels";
   function shareWithLabels() { return $("share-labels").checked; }
   function shareUrl() {
     var q = encodeState(shareWithLabels());
@@ -477,7 +490,7 @@
 
     if (document.activeElement !== $("pl-title")) $("pl-title").value = state.title;
     $("opt-loop").checked = state.loop;
-    document.title = (state.title ? state.title + " - " : "") + "YouTube区間プレイリスト | Hello! Tools";
+    document.title = (state.title ? state.title + " - " : "") + "Cliplist（クリップリスト）";
 
     // 共有URL
     var url = shareUrl();
@@ -491,6 +504,7 @@
       warn.hidden = false;
       warn.textContent = "URLが " + url.length + " 文字あります。SNSやメッセージアプリによっては途中で切れることがあります。ラベルを短くするか、「テキストでコピー」も使ってください。";
     } else warn.hidden = true;
+    if (typeof renderShort === "function" && !$("short-box").hidden) renderShort();
 
     renderNow();
   }
@@ -650,6 +664,10 @@
   // ---------- プレイヤー ----------
   var player = null, ready = false, queue = [];
   var lastAdvance = 0, pollTimer = null;
+  // 読み込みの立て直し用。loadAt: 今の区間を読み込ませた時刻 / started: 再生が始まったか /
+  // retries: 読み込み直した回数 / kicked: 待機状態から再生を1回押し直したか
+  var loadAt = 0, started = false, retries = 0, kicked = false;
+  var MAX_RETRIES = 2, STALL_MS = 10000;
   function whenReady(fn) { if (ready) fn(); else queue.push(fn); }
 
   window.onYouTubeIframeAPIReady = function () {
@@ -688,11 +706,28 @@
     var it = state.items[i];
     $("shared-banner").hidden = true;
     render();
-    whenReady(function () {
-      var opt = { videoId: it.id, startSeconds: it.s };
-      if (it.e != null) opt.endSeconds = it.e;
-      player.loadVideoById(opt);
-    });
+    retries = 0;
+    whenReady(loadCurrent);
+  }
+
+  // 今の区間を読み込ませる（やり直しにも使う）
+  function loadCurrent() {
+    var it = state.items[cur];
+    if (mode !== "list" || !it) return;
+    loadAt = Date.now(); started = false; kicked = false;
+    var opt = { videoId: it.id, startSeconds: it.s };
+    if (it.e != null) opt.endSeconds = it.e;
+    player.loadVideoById(opt);
+  }
+
+  // 読み込みに失敗したときのやり直し。何度やってもだめなら、その区間に印を付けて次へ
+  function retryLoad(reason) {
+    var it = state.items[cur];
+    if (mode !== "list" || !it) return;
+    if (retries < MAX_RETRIES) { retries++; loadCurrent(); return; }
+    errors[it.id] = reason || "読み込めませんでした";
+    render();
+    lastAdvance = 0; next();
   }
 
   function next() {
@@ -711,18 +746,34 @@
     var S = YT.PlayerState;
     $("btn-play").textContent = e.data === S.PLAYING ? "⏸" : "▶";
     if (e.data === S.PLAYING) {
+      started = true;
       var d = player.getVideoData();
       if (d && d.video_id && d.title && !titles[d.video_id]) { titles[d.video_id] = d.title; saveTitles(); render(); }
       if (d && d.video_id && errors[d.video_id]) { delete errors[d.video_id]; render(); }
     }
     if (e.data === S.ENDED && mode === "list") next();
+    // 再生中のはずが待機状態（CUED）に戻ったとき。読み込みの失敗や、自動再生を止められたときに起こる
+    if (e.data === S.CUED && mode === "list" && !started) {
+      var it = state.items[cur];
+      if (!it) return;
+      if (playingId() !== it.id) { retryLoad(); return; }      // 前の動画に戻ってしまった
+      if (!kicked) { kicked = true; player.playVideo(); return; }
+      toast("自動で再生できませんでした。▶ を押してください");
+    }
   }
 
   // 終了秒を過ぎたら次へ（endSeconds が効かない場合の保険）
   function poll() {
     if (mode !== "list" || !ready) return;
     var it = state.items[cur];
-    if (!it || it.e == null) return;
+    if (!it) return;
+    // 読み込んだのに、しばらく再生が始まらない（読み込み中のまま止まった）ときは、やり直す
+    try {
+      var st0 = player.getPlayerState();
+      if (!started && Date.now() - loadAt > STALL_MS &&
+          (st0 === YT.PlayerState.BUFFERING || st0 === YT.PlayerState.UNSTARTED)) retryLoad();
+    } catch (err) {}
+    if (it.e == null) return;
     try {
       if (player.getPlayerState() !== YT.PlayerState.PLAYING) return;
       if (playingId() !== it.id) return;
@@ -898,7 +949,7 @@
     if (!line) return [];
     // このツールの共有URLなら中身を全部取り出す
     var qi = line.indexOf("?");
-    if (qi >= 0 && /[?&]c=/.test(line) && /yt-clips/.test(line)) return decodeQuery(line.slice(qi + 1).split("#")[0]).items;
+    if (qi >= 0 && /[?&]c=/.test(line) && /cliplist/.test(line)) return decodeQuery(line.slice(qi + 1).split("#")[0]).items;
     var toks = line.split(/\s+/);
     var v = parseYouTube(toks[0]);
     if (!v) return null;
@@ -955,9 +1006,9 @@
   // ファイル名は英数字だけにする（日本語の名前だと "download" に置き換えるブラウザがあるため）
   function fileBase() {
     var t = (state.title || "").replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
-    if (t.length >= 3) return "yt-clips_" + t;
+    if (t.length >= 3) return "cliplist_" + t;
     var d = new Date();
-    return "yt-clips_" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
+    return "cliplist_" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
   }
   function download(text, name, mime) {
     // 先頭に BOM を付けて、Excel でも文字化けしない UTF-8 にする
@@ -1094,7 +1145,7 @@
   if (navigator.share) {
     $("share-native").hidden = false;
     $("share-native").addEventListener("click", function () {
-      navigator.share({ title: state.title || "YouTube区間プレイリスト", url: shareUrl() }).catch(function () {});
+      navigator.share({ title: state.title || "Cliplist", url: shareUrl() }).catch(function () {});
     });
   }
 
@@ -1106,6 +1157,57 @@
     whenReady(function () { player.stopVideo(); });
     commit();
   });
+
+  // ---------- 短縮URL ----------
+  // 共有した時点のプレイリストを預けて、/<コード> の短いURLをもらう。
+  // サーバー側（sites/cliplist/worker/index.js）が使えるときだけボタンを出す。長いURLは関係なくそのまま動く
+  var lastShort = null;   // { key: 発行したときの中身, url }
+  function shortData() {
+    var withLabels = shareWithLabels();
+    return {
+      v: 1, title: state.title || "", loop: !!state.loop,
+      items: state.items.map(function (it) {
+        var o = { id: it.id, s: it.s, e: it.e == null ? null : it.e };
+        if (withLabels && it.label) o.label = it.label;
+        return o;
+      })
+    };
+  }
+  function renderShort() {
+    var ok = lastShort && lastShort.key === JSON.stringify(shortData());
+    $("short-row").hidden = !ok;
+    if (ok) $("short-url").textContent = lastShort.url;
+    $("short-make").disabled = state.items.length === 0;
+  }
+  $("short-make").addEventListener("click", function () {
+    if (!state.items.length) return;
+    var b = this, data = shortData(), key = JSON.stringify(data);
+    if (lastShort && lastShort.key === key) { renderShort(); return; }
+    b.disabled = true; b.textContent = "発行中…";
+    fetch("/api/shorten", { method: "POST", headers: { "content-type": "application/json" }, body: key })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok || !res.j.url) { toast(res.j.error || "発行できませんでした"); return; }
+        lastShort = { key: key, url: res.j.url };
+        renderShort();
+        toast("短縮URLを発行しました");
+      })
+      .catch(function () { toast("発行できませんでした。通信環境を確認してください"); })
+      .then(function () { b.textContent = "短縮URLを発行"; b.disabled = state.items.length === 0; });
+  });
+  $("short-copy").addEventListener("click", function () { if (lastShort) copy(lastShort.url, this); });
+  if (navigator.share) {
+    $("short-share").hidden = false;
+    $("short-share").addEventListener("click", function () {
+      if (lastShort) navigator.share({ title: state.title || "Cliplist", url: lastShort.url }).catch(function () {});
+    });
+  }
+  if (window.fetch) {
+    fetch("/api/status")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.ok) { $("short-box").hidden = false; renderShort(); } })
+      .catch(function () {});
+  }
 
   // ---------- 起動 ----------
   // ?url= で動画を渡されたら、追加フォームに入れておく（下で URL を書き換える前に読む）
