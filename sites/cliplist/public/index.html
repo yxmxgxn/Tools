@@ -249,7 +249,7 @@
         <button type="button" id="short-copy">コピー</button>
         <button type="button" id="short-share" hidden>共有…</button>
       </div>
-      <p id="short-msg" class="hint-text" style="margin:0.25rem 0 0">短縮URLは、発行した時点の内容で固定されます。</p>
+      <p id="short-msg" class="hint-text" style="margin:0.25rem 0 0">短縮URLは、発行した時点の内容で固定されます。入るのは動画と時間だけで、タイトルとチャプター名は入りません。</p>
     </div>
   </div>
 
@@ -1152,14 +1152,13 @@
   // 共有した時点のプレイリストを預けて、/<コード> の短いURLをもらう。
   // サーバー側（sites/cliplist/worker/index.js）が使えるときだけボタンを出す。長いURLは関係なくそのまま動く
   var lastShort = null;   // { key: 発行したときの中身, url }
+  // 短縮URLに預けるのは、動画ID・時間・くり返しの設定だけ（タイトル・チャプター名は入れない）。
+  // サーバーが保存する形と同じにしておくと、同じ中身かどうかをそのまま比べられる
   function shortData() {
-    var withLabels = shareWithLabels();
     return {
-      v: 1, title: state.title || "", loop: !!state.loop,
+      v: 1, title: "", loop: !!state.loop,
       items: state.items.map(function (it) {
-        var o = { id: it.id, s: it.s, e: it.e == null ? null : it.e };
-        if (withLabels && it.label) o.label = it.label;
-        return o;
+        return { id: it.id, s: it.s, e: it.e == null ? null : it.e };
       })
     };
   }
