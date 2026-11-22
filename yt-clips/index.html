@@ -38,6 +38,9 @@
 </script>
 
 <style>
+  /* display を指定した部品でも hidden で確実に隠れるようにする（指定がないと hidden が効かない） */
+  [hidden] { display: none !important; }
+
   .player-wrap {
     position: relative;
     width: 100%;
@@ -106,7 +109,6 @@
     padding: 10px 14px; border-radius: 8px;
     background: #333; color: #fff; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25);
   }
-  .toast[hidden] { display: none; }
   .toast button { background: transparent; color: #d9c8f0; border-color: #777; white-space: nowrap; }
   .clip-thumb { width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: var(--code-bg); display: block; cursor: pointer; }
   .clip-body { min-width: 0; }
