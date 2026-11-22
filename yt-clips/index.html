@@ -1,0 +1,929 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>YouTube区間プレイリスト | Hello! Tools</title>
+<meta name="description" content="YouTube動画の好きな区間(開始〜終了)だけを並べて、順番に続けて再生するプレイリストを作ります。プレイリストはURLに入るので、リンクを送るだけで共有できます。登録・ログイン不要。">
+<meta property="og:title" content="YouTube区間プレイリスト">
+<meta property="og:description" content="YouTubeの好きな区間だけを並べて続けて再生。リンクを送るだけで共有できます。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/yt-clips/">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/yt-clips.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="YouTube区間プレイリスト">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/yt-clips.png">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/yt-clips/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "YouTube区間プレイリスト",
+  "description": "YouTube動画の好きな区間(開始〜終了)だけを並べて、順番に続けて再生するプレイリストを作ります。プレイリストはURLに入るので、リンクを送るだけで共有できます。",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+}
+</script>
+
+<style>
+  .player-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1rem 0 0.5rem;
+  }
+  .player-wrap > iframe, .player-wrap > #yt-player { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .player-msg {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #bbb; font-size: 14px; text-align: center; padding: 1rem; pointer-events: none;
+  }
+
+  .now { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0.5rem 0 0; }
+  .now-text { flex: 1; min-width: 180px; font-size: 14px; }
+  .now-text b { display: block; font-weight: 700; overflow-wrap: anywhere; }
+  .now-text span { color: var(--muted); font-size: 13px; }
+  .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .controls button { min-width: 44px; }
+
+  .shared-banner {
+    margin: 1rem 0 0;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+  .shared-banner p { margin: 0; flex: 1; min-width: 200px; font-size: 14px; }
+
+  .playlist-title { width: 100%; font-size: 16px !important; font-weight: 700; }
+
+  .clip-list { list-style: none; margin: 0.5rem 0; padding: 0; counter-reset: clip; }
+  .clip {
+    display: grid;
+    grid-template-columns: 2.4em 96px 1fr;
+    gap: 4px 10px;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+  .clip.is-current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .clip.is-error { opacity: 0.6; }
+  /* 左端のつまみ。ここをつかんで上下にドラッグすると並べ替えられる（指でも動く） */
+  .clip-handle {
+    grid-row: span 2; align-self: stretch;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    padding: 0; border: none; background: none; color: var(--muted);
+    font-size: 12px; line-height: 1.2; cursor: grab;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .clip-handle .grip { font-size: 18px; letter-spacing: -2px; }
+  .clip-handle:hover { color: var(--accent); }
+  .clip.dragging { position: relative; z-index: 5; background: var(--bg); box-shadow: 0 8px 22px rgba(0,0,0,.25); cursor: grabbing; }
+  .clip.drop-above { box-shadow: 0 -3px 0 0 var(--accent); }
+  .clip.drop-below { box-shadow: 0 3px 0 0 var(--accent); }
+  body.is-dragging { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    max-width: calc(100% - 32px); z-index: 20;
+    display: flex; gap: 12px; align-items: center;
+    padding: 10px 14px; border-radius: 8px;
+    background: #333; color: #fff; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  }
+  .toast[hidden] { display: none; }
+  .toast button { background: transparent; color: #d9c8f0; border-color: #777; white-space: nowrap; }
+  .clip-thumb { width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: var(--code-bg); display: block; cursor: pointer; }
+  .clip-body { min-width: 0; }
+  .clip-name { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; line-height: 1.4; }
+  .clip-sub { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+  .clip-sub .err { color: var(--danger); }
+  .clip-actions { grid-column: 2 / -1; grid-row: 2; display: flex; gap: 4px; flex-wrap: wrap; }
+  .clip-actions button { padding: 2px 8px; font-size: 13px; }
+
+  .form-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 10px; align-items: center; margin: 0.75rem 0; font-size: 14px; }
+  .form-grid > label { color: var(--muted); }
+  .time-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .time-row input { width: 8em; }
+  .time-row button { font-size: 13px; padding: 4px 8px; }
+  .form-grid input.wide { width: 100%; }
+  .form-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .total { font-size: 13px; color: var(--muted); margin: 0; }
+  .empty { color: var(--muted); font-size: 14px; padding: 1rem; border: 1px dashed var(--line); border-radius: 8px; text-align: center; }
+
+  .share-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin: 0.5rem 0; }
+  #share-url { max-height: 7.5em; overflow: auto; }
+
+  details.howto summary { cursor: pointer; }
+  @media (max-width: 480px) {
+    .clip { grid-template-columns: 2.2em 80px 1fr; }
+    .clip-thumb { width: 80px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid > label { margin-bottom: -4px; }
+  }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <h1>YouTube区間プレイリスト</h1>
+  YouTube動画の<strong>好きな区間（開始〜終了）だけ</strong>を並べて、順番に続けて再生します。<br>
+  プレイリストは<strong>URLにまるごと入る</strong>ので、下の「共有」からリンクを送るだけで、相手も同じ順番・同じ区間で再生できます。登録やログインはいりません。
+
+  <div id="shared-banner" class="shared-banner" hidden>
+    <p id="shared-text">共有されたプレイリストです。</p>
+    <button type="button" id="shared-play" class="button-primary">▶ 最初から再生</button>
+  </div>
+
+  <div class="player-wrap">
+    <div id="yt-player"></div>
+    <div id="player-msg" class="player-msg">プレイヤーを読み込んでいます…</div>
+  </div>
+
+  <div class="now">
+    <div class="now-text" id="now-text"><b>まだ再生していません</b><span>区間を追加して ▶ を押してください</span></div>
+    <div class="controls">
+      <button type="button" id="btn-prev" aria-label="前の区間">⏮</button>
+      <button type="button" id="btn-play" aria-label="再生・一時停止">▶</button>
+      <button type="button" id="btn-next" aria-label="次の区間">⏭</button>
+      <label class="hint-text"><input type="checkbox" id="opt-loop"> 全体をくり返す</label>
+      <button type="button" id="btn-grab" title="いま出ている動画と再生位置を、追加フォームに入れます">＋ ここから区間を作る</button>
+    </div>
+  </div>
+
+  <h2>プレイリスト</h2>
+  <input type="text" id="pl-title" class="playlist-title" placeholder="プレイリストの名前（任意・共有URLに入ります）" maxlength="80" autocomplete="off">
+  <p class="hint-text" style="margin:0.25rem 0 0">左端の <b>≡</b> をつかんで上下にドラッグすると、順番を入れ替えられます。</p>
+  <ol id="clip-list" class="clip-list"></ol>
+  <div class="form-buttons">
+    <p id="total" class="total" style="flex:1"></p>
+    <button type="button" id="clear-all">新しく作る（全部消す）</button>
+  </div>
+
+  <h2 id="form-heading">区間を追加</h2>
+  <div class="form-grid">
+    <label for="f-url">動画URL</label>
+    <input type="text" id="f-url" class="wide" placeholder="https://www.youtube.com/watch?v=xxxx&t=83s" autocomplete="off">
+
+    <label for="f-start">開始</label>
+    <div class="time-row">
+      <input type="text" id="f-start" placeholder="1:23" autocomplete="off" inputmode="decimal">
+      <button type="button" id="f-start-now" title="プレイヤーの現在位置を入れる">⏱ 今の位置</button>
+    </div>
+
+    <label for="f-end">終了</label>
+    <div class="time-row">
+      <input type="text" id="f-end" placeholder="空欄で最後まで" autocomplete="off" inputmode="decimal">
+      <button type="button" id="f-end-now" title="プレイヤーの現在位置を入れる">⏱ 今の位置</button>
+    </div>
+
+    <label for="f-label">ラベル</label>
+    <input type="text" id="f-label" class="wide" placeholder="任意（例: 2番サビ）。空ならタイトルを表示" maxlength="60" autocomplete="off">
+  </div>
+  <div class="form-buttons">
+    <button type="button" id="f-preview">プレビューで開く</button>
+    <button type="button" id="f-submit" class="button-primary">追加</button>
+    <button type="button" id="f-cancel" hidden>キャンセル</button>
+  </div>
+  <p id="f-err" class="error-text" hidden></p>
+  <p class="hint-text">時間は <code>83</code>・<code>1:23</code>・<code>1:02:03</code>・<code>1m23s</code> のどれでも入力できます。URLに <code>t=</code> が付いていれば開始に自動で入ります。<br>
+  「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。入力欄で Enter を押しても追加できます。</p>
+
+  <h2>共有</h2>
+  <p class="hint-text" style="margin:0">このURLにプレイリストがまるごと入っています。アドレスバーのURLも同じものに自動で更新されます。</p>
+  <div class="result">
+    <div class="output-row">
+      <code id="share-url" class="output"></code>
+    </div>
+    <div class="share-buttons">
+      <button type="button" id="share-copy" class="button-primary">URLをコピー</button>
+      <button type="button" id="share-native" hidden>共有…</button>
+      <button type="button" id="share-text">テキストでコピー</button>
+    </div>
+    <p id="share-warn" class="hint-text" hidden></p>
+  </div>
+
+  <h2>まとめて追加</h2>
+  <details class="howto">
+    <summary>URLを何行も貼って一気に追加する</summary>
+    <p class="hint-text">1行に1区間。<code>URL 開始-終了 ラベル</code> の順で書きます（開始・終了・ラベルは省略可）。このツールの共有URLを貼ると、その中身を全部追加します。</p>
+    <textarea id="bulk" rows="5" placeholder="https://youtu.be/xxxx 1:23-2:45 1番サビ&#10;https://www.youtube.com/watch?v=yyyy&t=60 1:00-1:30&#10;https://youtu.be/zzzz"></textarea>
+    <div class="form-buttons" style="margin-top:6px">
+      <button type="button" id="bulk-add">まとめて追加</button>
+      <span id="bulk-msg" class="hint-text"></span>
+    </div>
+  </details>
+
+  <h2>メモ</h2>
+  <ul class="hint-text">
+    <li>再生はYouTube公式の埋め込みプレイヤーです。<strong>埋め込みが禁止されている動画は再生できない</strong>ので、自動で次へ飛ばします。</li>
+    <li>広告が入ることがあります。広告のあとに区間の続きから再生されます。</li>
+    <li>スマホでは、最初の1回だけ ▶ を押す必要があります（ブラウザの自動再生の制限のため）。</li>
+    <li>プレイリストはURLとこのブラウザの中にだけ保存されます。サーバーには何も保存しません。</li>
+    <li>区間が多すぎてURLが長くなると、SNSによっては途中で切れることがあります。そのときは「テキストでコピー」も使えます。</li>
+  </ul>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+<div id="toast" class="toast" hidden role="status" aria-live="polite"><span id="toast-text"></span><button type="button" id="toast-undo" hidden>元に戻す</button></div>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+
+  var STORE_KEY = "yt-clips:last";
+  var TITLE_KEY = "yt-clips:titles";
+  var ID_RE = /^[A-Za-z0-9_-]{11}$/;
+
+  // ---------- 状態 ----------
+  // items: { id, s(開始秒), e(終了秒 or null), label }
+  var state = { title: "", loop: false, items: [] };
+  var titles = {};          // 動画ID → タイトル（表示用のキャッシュ。URLには入れない）
+  var errors = {};          // 動画ID → エラー文（再生できなかったもの）
+  var cur = -1;             // 再生中の区間の番号
+  var mode = "idle";        // idle | list(プレイリスト再生) | preview(追加前の確認)
+  var editing = -1;         // 編集中の区間の番号（-1 = 新規追加）
+
+  try { titles = JSON.parse(localStorage.getItem(TITLE_KEY) || "{}") || {}; } catch (e) { titles = {}; }
+  function saveTitles() { try { localStorage.setItem(TITLE_KEY, JSON.stringify(titles)); } catch (e) {} }
+
+  // ---------- 時間の読み書き ----------
+  function parseTime(raw) {
+    raw = String(raw == null ? "" : raw).trim().replace(/[：]/g, ":").replace(/[．]/g, ".")
+      .replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
+    if (raw === "") return null;
+    var m;
+    if (/^\d+(\.\d+)?s?$/.test(raw)) return parseFloat(raw);
+    if ((m = raw.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?$/i)) && raw !== "") {
+      return (+(m[1] || 0)) * 3600 + (+(m[2] || 0)) * 60 + (+(m[3] || 0));
+    }
+    if ((m = raw.match(/^(\d+):(\d{1,2})(?::(\d{1,2}(?:\.\d+)?))?$/)) ) {
+      if (m[3] != null) return (+m[1]) * 3600 + (+m[2]) * 60 + parseFloat(m[3]);
+      return (+m[1]) * 60 + (+m[2]);
+    }
+    if ((m = raw.match(/^(\d+):(\d{1,2}(?:\.\d+)?)$/))) return (+m[1]) * 60 + parseFloat(m[2]);
+    return NaN;
+  }
+  function round1(x) { return Math.round(x * 10) / 10; }
+  function fmtTime(x) {
+    if (x == null || isNaN(x)) return "";
+    x = round1(x);
+    var h = Math.floor(x / 3600), mi = Math.floor((x % 3600) / 60), s = x - h * 3600 - mi * 60;
+    var ss = (Math.round(s * 10) / 10).toString();
+    if (s < 10) ss = "0" + ss;
+    return (h > 0 ? h + ":" + (mi < 10 ? "0" : "") + mi : mi) + ":" + ss;
+  }
+  function fmtNum(x) { return String(round1(x)); }
+
+  // ---------- YouTube URL ----------
+  function parseYouTube(raw) {
+    raw = String(raw || "").trim();
+    if (raw === "") return null;
+    if (ID_RE.test(raw)) return { id: raw, t: null, end: null };
+    var u;
+    try { u = new URL(/^https?:\/\//i.test(raw) ? raw : "https://" + raw); } catch (e) { return null; }
+    var host = u.hostname.replace(/^(www|m|music)\./, "");
+    var id = "", p = u.pathname, m;
+    if (host === "youtu.be") id = p.slice(1).split("/")[0];
+    else if (host === "youtube.com" || host === "youtube-nocookie.com") {
+      if (p === "/watch") id = u.searchParams.get("v") || "";
+      else if ((m = p.match(/^\/(?:shorts|live|embed|v)\/([^\/?#]+)/))) id = m[1];
+    } else return null;
+    if (!ID_RE.test(id)) return null;
+    var t = u.searchParams.get("t") || u.searchParams.get("start");
+    if (!t && u.hash) { var hm = u.hash.match(/t=([^&]+)/); if (hm) t = hm[1]; }
+    var ts = t ? parseTime(t) : null;
+    var es = u.searchParams.get("end") ? parseTime(u.searchParams.get("end")) : null;
+    return { id: id, t: (ts != null && !isNaN(ts)) ? ts : null, end: (es != null && !isNaN(es)) ? es : null };
+  }
+
+  // ---------- 共有URL（状態 ⇔ クエリ） ----------
+  // c=動画ID~開始~終了~ラベル を区間の数だけ並べる。~ は URL でエスケープされないので短く読みやすい
+  function encodeState() {
+    var parts = [];
+    if (state.title) parts.push("title=" + encodeURIComponent(state.title));
+    state.items.forEach(function (it) {
+      var v = it.id + "~" + fmtNum(it.s) + "~" + (it.e == null ? "" : fmtNum(it.e));
+      if (it.label) v += "~" + it.label;
+      parts.push("c=" + encodeURIComponent(v).replace(/%7E/gi, "~"));
+    });
+    if (state.loop) parts.push("loop=1");
+    return parts.join("&");
+  }
+  function decodeQuery(qs) {
+    var p = new URLSearchParams(qs);
+    var out = { title: (p.get("title") || "").slice(0, 80), loop: p.get("loop") === "1", items: [] };
+    p.getAll("c").forEach(function (v) {
+      var a = v.split("~");
+      if (!ID_RE.test(a[0] || "")) return;
+      var s = parseFloat(a[1]); var e = a[2] === "" || a[2] == null ? null : parseFloat(a[2]);
+      if (isNaN(s) || s < 0) s = 0;
+      if (e != null && (isNaN(e) || e <= s)) e = null;
+      out.items.push({ id: a[0], s: s, e: e, label: a.slice(3).join("~").slice(0, 60) });
+    });
+    return out;
+  }
+  function shareUrl() {
+    var q = encodeState();
+    return location.origin + location.pathname + (q ? "?" + q : "");
+  }
+
+  function commit() {
+    var q = encodeState();
+    try { history.replaceState(null, "", location.pathname + (q ? "?" + q : "")); } catch (e) {}
+    try { localStorage.setItem(STORE_KEY, q); } catch (e) {}
+    render();
+  }
+
+  // ---------- 表示 ----------
+  function nameOf(it) { return it.label || titles[it.id] || it.id; }
+  function rangeText(it) {
+    var r = fmtTime(it.s) + "〜" + (it.e == null ? "最後" : fmtTime(it.e));
+    if (it.e != null) r += "（" + fmtTime(it.e - it.s) + "）";
+    return r;
+  }
+
+  function render() {
+    var list = $("clip-list");
+    list.textContent = "";
+    if (state.items.length === 0) {
+      var li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = "まだ区間がありません。下の「区間を追加」から足してください。";
+      list.appendChild(li);
+    }
+    state.items.forEach(function (it, i) {
+      var li = document.createElement("li");
+      li.className = "clip" + (i === cur && mode === "list" ? " is-current" : "") + (errors[it.id] ? " is-error" : "");
+
+      var no = document.createElement("button");
+      no.type = "button"; no.className = "clip-handle";
+      no.setAttribute("aria-label", (i + 1) + "番目。ドラッグで並べ替え");
+      no.innerHTML = '<span class="grip">≡</span>';
+      no.appendChild(document.createTextNode(String(i + 1)));
+      no.addEventListener("pointerdown", function (ev) { startDrag(ev, li, i); });
+      var img = document.createElement("img");
+      img.className = "clip-thumb"; img.loading = "lazy"; img.alt = "";
+      img.src = "https://i.ytimg.com/vi/" + it.id + "/mqdefault.jpg";
+      img.addEventListener("click", function () { playIndex(i); });
+
+      var body = document.createElement("div"); body.className = "clip-body";
+      var nm = document.createElement("div"); nm.className = "clip-name"; nm.textContent = nameOf(it);
+      var sub = document.createElement("div"); sub.className = "clip-sub";
+      sub.textContent = rangeText(it) + (it.label && titles[it.id] ? " ・ " + titles[it.id] : "");
+      if (errors[it.id]) {
+        var er = document.createElement("span"); er.className = "err"; er.textContent = " ・ " + errors[it.id];
+        sub.appendChild(er);
+      }
+      body.appendChild(nm); body.appendChild(sub);
+
+      var act = document.createElement("div"); act.className = "clip-actions";
+      act.appendChild(btn("▶ 再生", function () { playIndex(i); }));
+      act.appendChild(btn("↑", function () { move(i, -1); }, i === 0, "上へ"));
+      act.appendChild(btn("↓", function () { move(i, 1); }, i === state.items.length - 1, "下へ"));
+      act.appendChild(btn("編集", function () { startEdit(i); }));
+      act.appendChild(btn("複製", function () {
+        var curItem = state.items[cur];
+        state.items.splice(i + 1, 0, Object.assign({}, it));
+        if (curItem) cur = state.items.indexOf(curItem);
+        commit(); toast((i + 2) + "番目に複製しました");
+      }));
+      act.appendChild(btn("削除", function () { remove(i); }));
+
+      li.appendChild(no); li.appendChild(img); li.appendChild(body); li.appendChild(act);
+      list.appendChild(li);
+      fetchTitle(it.id);
+    });
+
+    // 合計時間
+    var sum = 0, open = 0;
+    state.items.forEach(function (it) { if (it.e == null) open++; else sum += it.e - it.s; });
+    $("total").textContent = state.items.length
+      ? state.items.length + "区間・合計 " + fmtTime(sum) + (open ? "＋最後までの区間 " + open + "つ" : "")
+      : "";
+
+    if (document.activeElement !== $("pl-title")) $("pl-title").value = state.title;
+    $("opt-loop").checked = state.loop;
+    document.title = (state.title ? state.title + " - " : "") + "YouTube区間プレイリスト | Hello! Tools";
+
+    // 共有URL
+    var url = shareUrl();
+    // 表示は読みやすく日本語に戻す。コピーするのはエンコード済みの安全なURL
+    var shown = url;
+    try { shown = decodeURI(url); } catch (e) {}
+    $("share-url").textContent = state.items.length ? shown : "（区間を追加するとここに共有URLが出ます）";
+    ["share-copy", "share-native", "share-text"].forEach(function (id) { $(id).disabled = state.items.length === 0; });
+    var warn = $("share-warn");
+    if (url.length > 2000) {
+      warn.hidden = false;
+      warn.textContent = "URLが " + url.length + " 文字あります。SNSやメッセージアプリによっては途中で切れることがあります。ラベルを短くするか、「テキストでコピー」も使ってください。";
+    } else warn.hidden = true;
+
+    renderNow();
+  }
+
+  function btn(text, fn, disabled, label) {
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = text; b.disabled = !!disabled;
+    if (label) b.setAttribute("aria-label", label);
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  function renderNow() {
+    var box = $("now-text");
+    box.textContent = "";
+    var b = document.createElement("b"), s = document.createElement("span");
+    if (mode === "list" && state.items[cur]) {
+      var it = state.items[cur];
+      b.textContent = (cur + 1) + "/" + state.items.length + "　" + nameOf(it);
+      s.textContent = rangeText(it);
+    } else if (mode === "preview") {
+      b.textContent = "プレビュー中";
+      s.textContent = "シークして「⏱ 今の位置」で開始・終了を入れられます";
+    } else {
+      b.textContent = state.items.length ? "停止中" : "まだ区間がありません";
+      s.textContent = state.items.length ? "▶ で1つ目から再生します" : "下の「区間を追加」から足してください";
+    }
+    box.appendChild(b); box.appendChild(s);
+  }
+
+  // タイトルは YouTube の oEmbed から取る（URLに入れずに済むので共有URLが短いまま）
+  var titleLoading = {};
+  function fetchTitle(id) {
+    if (titles[id] || titleLoading[id] || !window.fetch) return;
+    titleLoading[id] = true;
+    fetch("https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + id))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.title) { titles[id] = j.title; saveTitles(); render(); } })
+      .catch(function () {});
+  }
+
+  // ---------- 並べ替え・削除 ----------
+  // 区間を from 番目から to 番目へ動かす。再生中・編集中の区間は、中身で追いかける
+  function moveTo(from, to) {
+    if (from === to || to < 0 || to >= state.items.length) return;
+    var curItem = state.items[cur], editItem = state.items[editing];
+    var it = state.items.splice(from, 1)[0];
+    state.items.splice(to, 0, it);
+    if (curItem) cur = state.items.indexOf(curItem);
+    if (editItem) editing = state.items.indexOf(editItem);
+    commit();
+  }
+  function move(i, d) { moveTo(i, i + d); }
+
+  // 削除は確認なしですぐ消して、数秒だけ「元に戻す」を出す
+  var lastRemoved = null;
+  function remove(i) {
+    var it = state.items[i];
+    var wasCurrent = (i === cur && mode === "list");
+    var curItem = state.items[cur];
+    state.items.splice(i, 1);
+    if (wasCurrent) {
+      cur = -1; mode = "idle";
+      whenReady(function () { player.stopVideo(); });
+    } else if (curItem) cur = state.items.indexOf(curItem);
+    if (editing === i) endEdit(); else if (editing > i) editing--;
+    lastRemoved = { item: it, index: i };
+    commit();
+    toast("「" + nameOf(it) + "」を削除しました", function () {
+      if (!lastRemoved) return;
+      var ci = state.items[cur];
+      state.items.splice(Math.min(lastRemoved.index, state.items.length), 0, lastRemoved.item);
+      if (ci) cur = state.items.indexOf(ci);
+      if (editing >= lastRemoved.index) editing++;
+      lastRemoved = null;
+      commit();
+      toast("元に戻しました");
+    });
+  }
+
+  // ---------- 下に出るお知らせ（元に戻す付き） ----------
+  var toastTimer = null, toastUndo = null;
+  function toast(text, undo) {
+    $("toast-text").textContent = text;
+    toastUndo = undo || null;
+    $("toast-undo").hidden = !undo;
+    $("toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $("toast").hidden = true; toastUndo = null; }, undo ? 6000 : 2200);
+  }
+  $("toast-undo").addEventListener("click", function () {
+    var fn = toastUndo; toastUndo = null;
+    $("toast").hidden = true;
+    if (fn) fn();
+  });
+
+  // ---------- ドラッグで並べ替え ----------
+  // 動かしている間は区間を見た目で動かすだけにして、離したときに1回だけ並べ替える
+  var drag = null;
+  function startDrag(ev, li, from) {
+    if (ev.button != null && ev.button !== 0) return;
+    if (state.items.length < 2) return;
+    ev.preventDefault();
+    var lis = Array.prototype.slice.call($("clip-list").children);
+    drag = {
+      li: li, from: from, to: from, lis: lis,
+      startY: ev.clientY + window.scrollY, lastClientY: ev.clientY,
+      mids: lis.map(function (x) { var r = x.getBoundingClientRect(); return r.top + window.scrollY + r.height / 2; }),
+      raf: 0
+    };
+    li.classList.add("dragging");
+    document.body.classList.add("is-dragging");
+    window.addEventListener("pointermove", onDragMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+    drag.raf = requestAnimationFrame(autoScroll);
+  }
+  function updateDrag() {
+    var y = drag.lastClientY + window.scrollY;
+    drag.li.style.transform = "translateY(" + (y - drag.startY) + "px)";
+    // 自分以外の区間のうち、真ん中が指より上にあるものの数 = 移動先
+    var to = 0;
+    drag.mids.forEach(function (m, k) { if (k !== drag.from && m < y) to++; });
+    drag.to = to;
+    drag.lis.forEach(function (x) { x.classList.remove("drop-above", "drop-below"); });
+    if (to < drag.from) drag.lis[to].classList.add("drop-above");
+    else if (to > drag.from) drag.lis[to].classList.add("drop-below");
+  }
+  function onDragMove(ev) {
+    if (!drag) return;
+    drag.lastClientY = ev.clientY;
+    updateDrag();
+  }
+  // 画面の上端・下端に近づいたら、ゆっくりスクロールする
+  function autoScroll() {
+    if (!drag) return;
+    var y = drag.lastClientY, edge = 70, v = 0;
+    if (y < edge) v = -Math.ceil((edge - y) / 6);
+    else if (y > window.innerHeight - edge) v = Math.ceil((y - (window.innerHeight - edge)) / 6);
+    if (v) { window.scrollBy(0, v); updateDrag(); }
+    drag.raf = requestAnimationFrame(autoScroll);
+  }
+  function endDrag() {
+    if (!drag) return;
+    var d = drag; drag = null;
+    cancelAnimationFrame(d.raf);
+    window.removeEventListener("pointermove", onDragMove);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
+    document.body.classList.remove("is-dragging");
+    d.li.classList.remove("dragging");
+    d.li.style.transform = "";
+    d.lis.forEach(function (x) { x.classList.remove("drop-above", "drop-below"); });
+    if (d.to !== d.from) moveTo(d.from, d.to);
+  }
+
+  // ---------- プレイヤー ----------
+  var player = null, ready = false, queue = [];
+  var lastAdvance = 0, pollTimer = null;
+  function whenReady(fn) { if (ready) fn(); else queue.push(fn); }
+
+  window.onYouTubeIframeAPIReady = function () {
+    // ここから先はYouTube側の読み込み表示に任せる（文字が動画に重ならないように）
+    $("player-msg").hidden = true;
+    player = new YT.Player("yt-player", {
+      width: "100%", height: "100%",
+      playerVars: { playsinline: 1, rel: 0 },
+      events: {
+        onReady: function () {
+          ready = true;
+          $("player-msg").hidden = true;
+          queue.splice(0).forEach(function (fn) { fn(); });
+          if (!pollTimer) pollTimer = setInterval(poll, 200);
+        },
+        onStateChange: onState,
+        onError: onError
+      }
+    });
+  };
+  (function loadApi() {
+    var s = document.createElement("script");
+    s.src = "https://www.youtube.com/iframe_api";
+    s.onerror = function () { $("player-msg").textContent = "YouTubeのプレイヤーを読み込めませんでした。通信環境を確認して、ページを再読み込みしてください。"; };
+    document.head.appendChild(s);
+  })();
+
+  function playingId() {
+    try { var d = player.getVideoData(); return d && d.video_id; } catch (e) { return null; }
+  }
+
+  function playIndex(i) {
+    if (!state.items.length) return;
+    if (i < 0 || i >= state.items.length) return;
+    cur = i; mode = "list"; lastAdvance = Date.now();
+    var it = state.items[i];
+    $("shared-banner").hidden = true;
+    render();
+    whenReady(function () {
+      var opt = { videoId: it.id, startSeconds: it.s };
+      if (it.e != null) opt.endSeconds = it.e;
+      player.loadVideoById(opt);
+    });
+  }
+
+  function next() {
+    if (mode !== "list") return;
+    if (Date.now() - lastAdvance < 800) return;   // 終了イベントと監視が二重に進めないように
+    if (cur + 1 < state.items.length) playIndex(cur + 1);
+    else if (state.loop && state.items.length) playIndex(0);
+    else { mode = "idle"; cur = -1; render(); }
+  }
+  function prev() {
+    if (mode === "list" && cur > 0) playIndex(cur - 1);
+    else if (state.items.length) playIndex(0);
+  }
+
+  function onState(e) {
+    var S = YT.PlayerState;
+    $("btn-play").textContent = e.data === S.PLAYING ? "⏸" : "▶";
+    if (e.data === S.PLAYING) {
+      var d = player.getVideoData();
+      if (d && d.video_id && d.title && !titles[d.video_id]) { titles[d.video_id] = d.title; saveTitles(); render(); }
+      if (d && d.video_id && errors[d.video_id]) { delete errors[d.video_id]; render(); }
+    }
+    if (e.data === S.ENDED && mode === "list") next();
+  }
+
+  // 終了秒を過ぎたら次へ（endSeconds が効かない場合の保険）
+  function poll() {
+    if (mode !== "list" || !ready) return;
+    var it = state.items[cur];
+    if (!it || it.e == null) return;
+    try {
+      if (player.getPlayerState() !== YT.PlayerState.PLAYING) return;
+      if (playingId() !== it.id) return;
+      if (player.getCurrentTime() >= it.e - 0.15) next();
+    } catch (err) {}
+  }
+
+  function onError(e) {
+    var msg = { 2: "URLが正しくありません", 5: "このブラウザでは再生できません", 100: "動画が見つかりません（削除・非公開）", 101: "埋め込みが禁止されています", 150: "埋め込みが禁止されています", 153: "埋め込みが禁止されています" }[e.data] || ("再生エラー(" + e.data + ")");
+    var it = mode === "list" ? state.items[cur] : null;
+    if (it) {
+      errors[it.id] = msg;
+      render();
+      var at = cur;
+      setTimeout(function () { if (mode === "list" && cur === at) { lastAdvance = 0; next(); } }, 1500);
+    } else {
+      showFormError("プレビューできません: " + msg);
+    }
+  }
+
+  $("btn-play").addEventListener("click", function () {
+    if (!ready) return;
+    var st = player.getPlayerState();
+    if (st === YT.PlayerState.PLAYING) { player.pauseVideo(); return; }
+    if (mode === "idle" || (mode === "list" && !state.items[cur])) { playIndex(0); return; }
+    player.playVideo();
+  });
+  $("btn-next").addEventListener("click", function () {
+    if (!state.items.length) return;
+    if (mode !== "list") { playIndex(0); return; }
+    lastAdvance = 0; next();
+  });
+  $("btn-prev").addEventListener("click", prev);
+  $("opt-loop").addEventListener("change", function () { state.loop = this.checked; commit(); });
+  $("pl-title").addEventListener("input", function () { state.title = this.value.trim().slice(0, 80); commit(); });
+
+  // ---------- 追加・編集フォーム ----------
+  function showFormError(msg) { $("f-err").textContent = msg; $("f-err").hidden = !msg; }
+
+  function readForm() {
+    var v = parseYouTube($("f-url").value);
+    if (!v) return { err: "YouTubeの動画URL（または11文字の動画ID）を入れてください。" };
+    var s = parseTime($("f-start").value), e = parseTime($("f-end").value);
+    if (s == null) s = v.t != null ? v.t : 0;
+    if (isNaN(s)) return { err: "開始の時間が読み取れません（例: 1:23）。" };
+    if (e != null && isNaN(e)) return { err: "終了の時間が読み取れません（例: 2:45）。" };
+    if (e == null && v.end != null) e = v.end;
+    if (e != null && e <= s) return { err: "終了は開始より後にしてください。" };
+    return { id: v.id, s: round1(s), e: e == null ? null : round1(e), label: $("f-label").value.trim().slice(0, 60) };
+  }
+
+  $("f-url").addEventListener("input", function () {
+    showFormError("");
+    var v = parseYouTube(this.value);
+    if (v && v.t != null && $("f-start").value.trim() === "") $("f-start").value = fmtTime(v.t);
+    if (v && v.end != null && $("f-end").value.trim() === "") $("f-end").value = fmtTime(v.end);
+  });
+
+  $("f-preview").addEventListener("click", function () {
+    var v = parseYouTube($("f-url").value);
+    if (!v) { showFormError("YouTubeの動画URLを入れてください。"); return; }
+    showFormError("");
+    var s = parseTime($("f-start").value);
+    mode = "preview"; cur = -1; render();
+    whenReady(function () { player.loadVideoById({ videoId: v.id, startSeconds: (s != null && !isNaN(s)) ? s : (v.t || 0) }); });
+    document.querySelector(".player-wrap").scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  function setNow(field) {
+    showFormError("");
+    if (!ready) return;
+    var v = parseYouTube($("f-url").value);
+    var pid = playingId();
+    if (!pid) { showFormError("先に「プレビューで開く」で動画を出してください。"); return; }
+    if (!v) {
+      // URL欄が空なら、いま出ている動画をそのまま使う
+      $("f-url").value = "https://youtu.be/" + pid;
+    } else if (v.id !== pid) {
+      showFormError("プレイヤーに出ている動画と、URL欄の動画が違います。「プレビューで開く」を押してください。");
+      return;
+    }
+    $(field).value = fmtTime(player.getCurrentTime());
+  }
+  $("f-start-now").addEventListener("click", function () { setNow("f-start"); });
+  $("f-end-now").addEventListener("click", function () { setNow("f-end"); });
+
+  $("f-submit").addEventListener("click", function () {
+    var r = readForm();
+    if (r.err) { showFormError(r.err); return; }
+    showFormError("");
+    if (editing >= 0 && state.items[editing]) {
+      state.items[editing] = r;
+      endEdit();
+      commit(); toast("更新しました");
+    } else {
+      state.items.push(r);
+      clearForm();
+      if (mode === "preview") mode = "idle";
+      commit(); toast(state.items.length + "番目に追加しました");
+    }
+  });
+  // 入力欄で Enter を押したら、追加（編集中なら更新）
+  ["f-url", "f-start", "f-end", "f-label"].forEach(function (id) {
+    $(id).addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" && !ev.isComposing) { ev.preventDefault(); $("f-submit").click(); }
+    });
+  });
+
+  // 再生中・プレビュー中の動画を、今の位置を開始にして追加フォームへ
+  $("btn-grab").addEventListener("click", function () {
+    var pid = ready && playingId();
+    if (!pid) { toast("先に動画を再生するか、プレビューで開いてください"); return; }
+    if (editing >= 0) endEdit();
+    $("f-url").value = "https://youtu.be/" + pid;
+    $("f-start").value = fmtTime(player.getCurrentTime());
+    $("f-end").value = ""; $("f-label").value = "";
+    showFormError("");
+    // プレイリストの自動の次送りを止めて、そのまま終了位置を探せるようにする
+    if (mode === "list") { mode = "preview"; cur = -1; render(); }
+    $("f-end").focus({ preventScroll: true });
+    $("form-heading").scrollIntoView({ behavior: "smooth", block: "start" });
+    toast("開始を入れました。終わりの位置で「⏱ 今の位置」を押してください");
+  });
+  $("f-cancel").addEventListener("click", function () { endEdit(); clearForm(); });
+
+  function clearForm() { ["f-url", "f-start", "f-end", "f-label"].forEach(function (id) { $(id).value = ""; }); }
+  function startEdit(i) {
+    var it = state.items[i];
+    editing = i;
+    $("f-url").value = "https://youtu.be/" + it.id;
+    $("f-start").value = fmtTime(it.s);
+    $("f-end").value = it.e == null ? "" : fmtTime(it.e);
+    $("f-label").value = it.label || "";
+    $("form-heading").textContent = (i + 1) + "番目を編集";
+    $("f-submit").textContent = "更新";
+    $("f-cancel").hidden = false;
+    showFormError("");
+    $("form-heading").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function endEdit() {
+    editing = -1;
+    $("form-heading").textContent = "区間を追加";
+    $("f-submit").textContent = "追加";
+    $("f-cancel").hidden = true;
+    clearForm();
+  }
+
+  // ---------- まとめて追加 ----------
+  function parseLine(line) {
+    line = line.trim();
+    if (!line) return [];
+    // このツールの共有URLなら中身を全部取り出す
+    var qi = line.indexOf("?");
+    if (qi >= 0 && /[?&]c=/.test(line) && /yt-clips/.test(line)) return decodeQuery(line.slice(qi + 1).split("#")[0]).items;
+    var toks = line.split(/\s+/);
+    var v = parseYouTube(toks[0]);
+    if (!v) return null;
+    var rest = toks.slice(1), s = v.t != null ? v.t : 0, e = v.end, label = "";
+    if (rest.length) {
+      var m = rest[0].match(/^([0-9:.hms]+)?\s*(?:[-~〜–ー]\s*([0-9:.hms]*))?$/i);
+      if (m && (m[1] || m[2])) {
+        var ps = m[1] ? parseTime(m[1]) : null, pe = m[2] ? parseTime(m[2]) : null;
+        if (ps != null && !isNaN(ps)) s = ps;
+        if (pe != null && !isNaN(pe)) e = pe;
+        rest = rest.slice(1);
+      }
+      label = rest.join(" ").slice(0, 60);
+    }
+    if (e != null && e <= s) e = null;
+    return [{ id: v.id, s: round1(s), e: e == null ? null : round1(e), label: label }];
+  }
+  $("bulk-add").addEventListener("click", function () {
+    var lines = $("bulk").value.split(/\r?\n/), added = 0, bad = 0;
+    lines.forEach(function (ln) {
+      var r = parseLine(ln);
+      if (r === null) { bad++; return; }
+      r.forEach(function (it) { state.items.push(it); added++; });
+    });
+    $("bulk-msg").textContent = added + "件追加しました" + (bad ? "（" + bad + "行は読み取れませんでした）" : "");
+    if (added) { $("bulk").value = ""; commit(); }
+  });
+
+  // ---------- 共有 ----------
+  function flash(b, text) {
+    var orig = b.dataset.orig || b.textContent; b.dataset.orig = orig;
+    b.textContent = text; setTimeout(function () { b.textContent = orig; }, 1500);
+  }
+  function copy(text, b) {
+    var done = function () { flash(b, "コピーしました"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { prompt("コピーしてください", text); });
+    } else prompt("コピーしてください", text);
+  }
+  function shareText() {
+    var lines = [];
+    if (state.title) lines.push(state.title);
+    state.items.forEach(function (it, i) {
+      lines.push((i + 1) + ". " + nameOf(it) + "　" + fmtTime(it.s) + "〜" + (it.e == null ? "" : fmtTime(it.e)));
+      lines.push("https://youtu.be/" + it.id + (it.s >= 1 ? "?t=" + Math.floor(it.s) : ""));
+    });
+    lines.push("", "▶ 続けて再生: " + shareUrl());
+    return lines.join("\n");
+  }
+  $("share-copy").addEventListener("click", function () { copy(shareUrl(), this); });
+  $("share-text").addEventListener("click", function () { copy(shareText(), this); });
+  if (navigator.share) {
+    $("share-native").hidden = false;
+    $("share-native").addEventListener("click", function () {
+      navigator.share({ title: state.title || "YouTube区間プレイリスト", url: shareUrl() }).catch(function () {});
+    });
+  }
+
+  $("clear-all").addEventListener("click", function () {
+    if (!state.items.length && !state.title) return;
+    if (!confirm("プレイリストを空にして、新しく作り始めますか？（いまのURLをコピーしておけば、あとで戻せます）")) return;
+    state = { title: "", loop: false, items: [] };
+    cur = -1; mode = "idle"; endEdit();
+    whenReady(function () { player.stopVideo(); });
+    commit();
+  });
+
+  // ---------- 起動 ----------
+  // ?url= で動画を渡されたら、追加フォームに入れておく（下で URL を書き換える前に読む）
+  var pre = new URLSearchParams(location.search).get("url");
+  var fromUrl = decodeQuery(location.search);
+  if (fromUrl.items.length) {
+    // 共有リンクで開いたとき。自分の保存分は、編集するまで上書きしない
+    state = fromUrl;
+    $("shared-banner").hidden = false;
+    $("shared-text").textContent = (state.title ? "「" + state.title + "」" : "共有されたプレイリスト") + "（" + state.items.length + "区間）です。";
+  } else {
+    var saved = null;
+    try { saved = localStorage.getItem(STORE_KEY); } catch (e) {}
+    if (saved) {
+      state = decodeQuery(saved);
+      try { history.replaceState(null, "", location.pathname + (saved ? "?" + saved : "")); } catch (e) {}
+    }
+  }
+  $("shared-play").addEventListener("click", function () { playIndex(0); });
+
+  if (pre) { $("f-url").value = pre; $("f-url").dispatchEvent(new Event("input")); }
+
+  // プレイヤーには最初の区間を出しておく（自動再生はしない）
+  whenReady(function () {
+    var it = state.items[0];
+    if (it && mode === "idle") player.cueVideoById({ videoId: it.id, startSeconds: it.s });
+  });
+  render();
+})();
+</script>
+</body>
+</html>
