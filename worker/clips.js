@@ -1,15 +1,16 @@
 // YouTube区間プレイリスト（/yt-clips/）の短縮URL。
 //
-//   POST /yt-clips/api/shorten   本文 {"q": "c=...&c=..."} → {"code": "Ab3xK9q", "url": "https://…/yt-clips/s/Ab3xK9q"}
+//   POST /yt-clips/api/shorten   本文 {v:1, title, loop, items:[{id,s,e,label}]} → {"code": "Ab3xK9qZ", "url": "https://…/yt-clips/s/Ab3xK9qZ"}
 //   GET  /yt-clips/api/status    短縮が使えるか（KVが付いているか）→ {"ok": true|false}
 //   GET  /yt-clips/s/<code>      長いURL /yt-clips/?c=... へ転送する
 //
+// 短縮URLは「共有した時点のプレイリスト」を預かって短い名前を付けるだけのシェア専用URL。
+// 一度発行した中身は変わらない（編集・削除はない）。中身を変えたいときは、新しく発行する。
 // 長いURL（プレイリストをまるごとクエリに入れたもの）は、これまでどおりそのまま動く。
-// 短縮URLは「長いURLの中身を預かって、短い名前を付ける」だけ。
 //
 // 安全のための作り方
-//  - 預かるのはプレイリストとして正しい中身だけ。届いたクエリを読み直して、
-//    動画ID・秒・ラベルを検査し、作り直したものだけを保存する（任意の文字列は保存しない）
+//  - 預かるのはプレイリストとして正しい中身だけ。動画ID・秒・ラベルを検査して、
+//    作り直したデータだけを保存する（届いた文字列をそのまま保存しない）
 //  - 同じ中身には同じ短縮コード（中身のハッシュから作る）。保存したものは書き換えない
 //  - このサイトの画面からのPOSTだけを受け付ける。大きさと回数に上限を付ける
 //  - KV（CLIPS）が付いていないときは、短縮は使えない（status が ok:false を返す）
@@ -50,36 +51,49 @@ function rateHit(ip) {
   return false;
 }
 
-// 画面側（yt-clips/index.html の encodeState）と同じ書き方にそろえる
-const enc = (s) => encodeURIComponent(s).replace(/%7E/gi, '~');
-const fmtNum = (x) => String(Math.round(x * 10) / 10);
+// ---- 保存する中身（第1版） ----
+// URLの文字列ではなく、データとして保存する。URLの書き方をあとで変えても、保存済みの中身は読める。
+//   { v: 1, title: "", loop: false, items: [{ id, s, e, label }] }
+//   id: 動画ID(11文字) / s: 開始秒 / e: 終了秒（null で最後まで）/ label: チャプター名（空なら省略）
+const DATA_VERSION = 1;
+const round1 = (x) => Math.round(x * 10) / 10;
 // 制御文字を消して、前後の空白を落とす
-const clean = (s, max) => String(s).replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
+const clean = (s, max) => String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
 
-// 届いたクエリを、プレイリストとして読み直して作り直す。読めなければ null
-export function canonicalQuery(qs) {
-  const p = new URLSearchParams(String(qs).replace(/^\?/, ''));
-  const parts = [];
-  const title = clean(p.get('title') || '', MAX_TITLE);
-  if (title) parts.push('title=' + enc(title));
-  let n = 0;
-  for (const v of p.getAll('c')) {
-    if (n >= MAX_ITEMS) break;
-    const a = v.split('~');
-    if (!ID_RE.test(a[0] || '')) continue;
-    let s = parseFloat(a[1]);
+// 届いたデータを検査して作り直す。区間がひとつも無ければ null
+export function normalizeData(d) {
+  if (!d || typeof d !== 'object' || !Array.isArray(d.items)) return null;
+  const items = [];
+  for (const it of d.items) {
+    if (items.length >= MAX_ITEMS) break;
+    if (!it || !ID_RE.test(String(it.id || ''))) continue;
+    let s = Number(it.s);
     if (!Number.isFinite(s) || s < 0) s = 0;
     if (s > MAX_SEC) continue;
-    let e = a[2] === '' || a[2] == null ? null : parseFloat(a[2]);
+    let e = it.e == null || it.e === '' ? null : Number(it.e);
     if (e != null && (!Number.isFinite(e) || e <= s || e > MAX_SEC)) e = null;
-    const label = clean(a.slice(3).join('~'), MAX_LABEL);
-    let item = a[0] + '~' + fmtNum(s) + '~' + (e == null ? '' : fmtNum(e));
-    if (label) item += '~' + label;
-    parts.push('c=' + enc(item));
-    n++;
+    const out = { id: String(it.id), s: round1(s), e: e == null ? null : round1(e) };
+    const label = clean(it.label, MAX_LABEL);
+    if (label) out.label = label;
+    items.push(out);
   }
-  if (!n) return null;
-  if (p.get('loop') === '1') parts.push('loop=1');
+  if (!items.length) return null;
+  const data = { v: DATA_VERSION, title: clean(d.title, MAX_TITLE), loop: d.loop === true, items };
+  return data;
+}
+
+// 保存したデータから、/yt-clips/ が読める長いURLのクエリ（第1版）を作る。
+// 長いURLの書き方を変えたときは、ここも合わせて直せば、保存済みの短縮URLはそのまま開ける
+const enc = (s) => encodeURIComponent(s).replace(/%7E/gi, '~');
+export function toQueryV1(data) {
+  const parts = [];
+  if (data.title) parts.push('title=' + enc(data.title));
+  for (const it of data.items) {
+    let v = it.id + '~' + String(it.s) + '~' + (it.e == null ? '' : String(it.e));
+    if (it.label) v += '~' + it.label;
+    parts.push('c=' + enc(v));
+  }
+  if (data.loop) parts.push('loop=1');
   return parts.join('&');
 }
 
@@ -114,13 +128,14 @@ async function handleShorten(request, env) {
 
   const raw = await request.text();
   if (raw.length > MAX_BODY) return json({ error: 'プレイリストが大きすぎます' }, 413);
-  let q = '';
-  try { q = String(JSON.parse(raw).q || ''); } catch (e) { return json({ error: '形式が正しくありません' }, 400); }
-  const canon = canonicalQuery(q);
-  if (!canon) return json({ error: '区間がひとつもありません' }, 400);
+  let data;
+  try { data = normalizeData(JSON.parse(raw)); } catch (e) { return json({ error: '形式が正しくありません' }, 400); }
+  if (!data) return json({ error: '区間がひとつもありません' }, 400);
+  const canon = JSON.stringify(data);
 
-  // 中身から短縮コードを作る。万一ほかの中身と重なったら、1文字ずつ長くする
-  for (let len = 7; len <= 12; len++) {
+  // 中身から短縮コードを作る。同じ中身なら同じコード。万一ほかの中身と重なったら、1文字ずつ長くする。
+  // 一度保存した中身は書き換えない
+  for (let len = 8; len <= 12; len++) {
     const code = await codeFor(canon, len);
     const have = await env.CLIPS.get(code);
     if (have === null) await env.CLIPS.put(code, canon);
@@ -139,8 +154,13 @@ async function handleShort(request, env, code) {
     `<p style="font-family:sans-serif;padding:0 1rem"><a href="${CLIPS_PREFIX}">YouTube区間プレイリストを開く</a></p>`,
     { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
   if (!env || !env.CLIPS) return notFound('短縮URLはいま使えません。');
-  const q = await env.CLIPS.get(code);
-  if (q === null) return notFound('この短縮URLのプレイリストは見つかりませんでした。');
+  const raw = await env.CLIPS.get(code);
+  if (raw === null) return notFound('この短縮URLのプレイリストは見つかりませんでした。');
+  let data = null;
+  try { data = JSON.parse(raw); } catch (e) {}
+  // 版ごとに読み分ける。いまは第1版だけ
+  if (!data || data.v !== 1) return notFound('この短縮URLのプレイリストを読めませんでした。');
+  const q = toQueryV1(data);
   // 中身は書き換えないので、転送先はしばらくキャッシュしてよい
   return new Response(null, {
     status: 302,

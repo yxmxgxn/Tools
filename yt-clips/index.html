@@ -237,7 +237,17 @@
       <button type="button" id="share-text">テキストでコピー</button>
     </div>
     <p id="share-warn" class="hint-text" hidden></p>
-  </div>
+    <div id="short-box" hidden>
+      <div class="share-buttons">
+        <button type="button" id="short-make">短縮URLを発行</button>
+      </div>
+      <div id="short-row" class="output-row" hidden>
+        <code id="short-url" class="output"></code>
+        <button type="button" id="short-copy">コピー</button>
+        <button type="button" id="short-share" hidden>共有…</button>
+      </div>
+      <p id="short-msg" class="hint-text" style="margin:0.25rem 0 0">短縮URLは、発行した時点のプレイリストで固定されます。あとで編集したら、もう一度発行してください（前に配ったURLは、そのときの内容のまま残ります）。</p>
+    </div>
 
   <h2>表計算で編集（CSV / TSV）</h2>
   <p class="hint-text" style="margin:0">プレイリストを「動画ID・開始・終了・チャプター名」の表で書き出して、Excel や Googleスプレッドシートで編集し、また読み込めます。</p>
@@ -491,6 +501,7 @@
       warn.hidden = false;
       warn.textContent = "URLが " + url.length + " 文字あります。SNSやメッセージアプリによっては途中で切れることがあります。ラベルを短くするか、「テキストでコピー」も使ってください。";
     } else warn.hidden = true;
+    if (typeof renderShort === "function" && !$("short-box").hidden) renderShort();
 
     renderNow();
   }
@@ -1106,6 +1117,57 @@
     whenReady(function () { player.stopVideo(); });
     commit();
   });
+
+  // ---------- 短縮URL ----------
+  // 共有した時点のプレイリストを預けて、/yt-clips/s/… の短いURLをもらう。
+  // サーバー側（worker/clips.js）が使えるときだけボタンを出す。長いURLは関係なくそのまま動く
+  var lastShort = null;   // { key: 発行したときの中身, url }
+  function shortData() {
+    var withLabels = shareWithLabels();
+    return {
+      v: 1, title: state.title || "", loop: !!state.loop,
+      items: state.items.map(function (it) {
+        var o = { id: it.id, s: it.s, e: it.e == null ? null : it.e };
+        if (withLabels && it.label) o.label = it.label;
+        return o;
+      })
+    };
+  }
+  function renderShort() {
+    var ok = lastShort && lastShort.key === JSON.stringify(shortData());
+    $("short-row").hidden = !ok;
+    if (ok) $("short-url").textContent = lastShort.url;
+    $("short-make").disabled = state.items.length === 0;
+  }
+  $("short-make").addEventListener("click", function () {
+    if (!state.items.length) return;
+    var b = this, data = shortData(), key = JSON.stringify(data);
+    if (lastShort && lastShort.key === key) { renderShort(); return; }
+    b.disabled = true; b.textContent = "発行中…";
+    fetch("/yt-clips/api/shorten", { method: "POST", headers: { "content-type": "application/json" }, body: key })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok || !res.j.url) { toast(res.j.error || "発行できませんでした"); return; }
+        lastShort = { key: key, url: res.j.url };
+        renderShort();
+        toast("短縮URLを発行しました");
+      })
+      .catch(function () { toast("発行できませんでした。通信環境を確認してください"); })
+      .then(function () { b.textContent = "短縮URLを発行"; b.disabled = state.items.length === 0; });
+  });
+  $("short-copy").addEventListener("click", function () { if (lastShort) copy(lastShort.url, this); });
+  if (navigator.share) {
+    $("short-share").hidden = false;
+    $("short-share").addEventListener("click", function () {
+      if (lastShort) navigator.share({ title: state.title || "YouTube区間プレイリスト", url: lastShort.url }).catch(function () {});
+    });
+  }
+  if (window.fetch) {
+    fetch("/yt-clips/api/status")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.ok) { $("short-box").hidden = false; renderShort(); } })
+      .catch(function () {});
+  }
 
   // ---------- 起動 ----------
   // ?url= で動画を渡されたら、追加フォームに入れておく（下で URL を書き換える前に読む）
