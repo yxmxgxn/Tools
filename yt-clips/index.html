@@ -67,7 +67,7 @@
   .clip-list { list-style: none; margin: 0.5rem 0; padding: 0; counter-reset: clip; }
   .clip {
     display: grid;
-    grid-template-columns: 1.8em 96px 1fr;
+    grid-template-columns: 2.4em 96px 1fr;
     gap: 4px 10px;
     align-items: center;
     padding: 8px;
@@ -77,13 +77,36 @@
   }
   .clip.is-current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
   .clip.is-error { opacity: 0.6; }
-  .clip-no { color: var(--muted); font-size: 13px; text-align: right; }
+  /* 左端のつまみ。ここをつかんで上下にドラッグすると並べ替えられる（指でも動く） */
+  .clip-handle {
+    grid-row: span 2; align-self: stretch;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    padding: 0; border: none; background: none; color: var(--muted);
+    font-size: 12px; line-height: 1.2; cursor: grab;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .clip-handle .grip { font-size: 18px; letter-spacing: -2px; }
+  .clip-handle:hover { color: var(--accent); }
+  .clip.dragging { position: relative; z-index: 5; background: var(--bg); box-shadow: 0 8px 22px rgba(0,0,0,.25); cursor: grabbing; }
+  .clip.drop-above { box-shadow: 0 -3px 0 0 var(--accent); }
+  .clip.drop-below { box-shadow: 0 3px 0 0 var(--accent); }
+  body.is-dragging { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    max-width: calc(100% - 32px); z-index: 20;
+    display: flex; gap: 12px; align-items: center;
+    padding: 10px 14px; border-radius: 8px;
+    background: #333; color: #fff; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  }
+  .toast[hidden] { display: none; }
+  .toast button { background: transparent; color: #d9c8f0; border-color: #777; white-space: nowrap; }
   .clip-thumb { width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: var(--code-bg); display: block; cursor: pointer; }
   .clip-body { min-width: 0; }
   .clip-name { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; line-height: 1.4; }
   .clip-sub { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
   .clip-sub .err { color: var(--danger); }
-  .clip-actions { grid-column: 2 / -1; display: flex; gap: 4px; flex-wrap: wrap; }
+  .clip-actions { grid-column: 2 / -1; grid-row: 2; display: flex; gap: 4px; flex-wrap: wrap; }
   .clip-actions button { padding: 2px 8px; font-size: 13px; }
 
   .form-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 10px; align-items: center; margin: 0.75rem 0; font-size: 14px; }
@@ -102,7 +125,7 @@
 
   details.howto summary { cursor: pointer; }
   @media (max-width: 480px) {
-    .clip { grid-template-columns: 1.4em 80px 1fr; }
+    .clip { grid-template-columns: 2.2em 80px 1fr; }
     .clip-thumb { width: 80px; }
     .form-grid { grid-template-columns: 1fr; }
     .form-grid > label { margin-bottom: -4px; }
@@ -138,11 +161,13 @@
       <button type="button" id="btn-play" aria-label="再生・一時停止">▶</button>
       <button type="button" id="btn-next" aria-label="次の区間">⏭</button>
       <label class="hint-text"><input type="checkbox" id="opt-loop"> 全体をくり返す</label>
+      <button type="button" id="btn-grab" title="いま出ている動画と再生位置を、追加フォームに入れます">＋ ここから区間を作る</button>
     </div>
   </div>
 
   <h2>プレイリスト</h2>
   <input type="text" id="pl-title" class="playlist-title" placeholder="プレイリストの名前（任意・共有URLに入ります）" maxlength="80" autocomplete="off">
+  <p class="hint-text" style="margin:0.25rem 0 0">左端の <b>≡</b> をつかんで上下にドラッグすると、順番を入れ替えられます。</p>
   <ol id="clip-list" class="clip-list"></ol>
   <div class="form-buttons">
     <p id="total" class="total" style="flex:1"></p>
@@ -176,7 +201,7 @@
   </div>
   <p id="f-err" class="error-text" hidden></p>
   <p class="hint-text">時間は <code>83</code>・<code>1:23</code>・<code>1:02:03</code>・<code>1m23s</code> のどれでも入力できます。URLに <code>t=</code> が付いていれば開始に自動で入ります。<br>
-  「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。</p>
+  「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。入力欄で Enter を押しても追加できます。</p>
 
   <h2>共有</h2>
   <p class="hint-text" style="margin:0">このURLにプレイリストがまるごと入っています。アドレスバーのURLも同じものに自動で更新されます。</p>
@@ -216,6 +241,8 @@
 <footer class="site-footer">
   <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
 </footer>
+
+<div id="toast" class="toast" hidden role="status" aria-live="polite"><span id="toast-text"></span><button type="button" id="toast-undo" hidden>元に戻す</button></div>
 
 <script>
 (function () {
@@ -347,7 +374,12 @@
       var li = document.createElement("li");
       li.className = "clip" + (i === cur && mode === "list" ? " is-current" : "") + (errors[it.id] ? " is-error" : "");
 
-      var no = document.createElement("span"); no.className = "clip-no"; no.textContent = (i + 1) + ".";
+      var no = document.createElement("button");
+      no.type = "button"; no.className = "clip-handle";
+      no.setAttribute("aria-label", (i + 1) + "番目。ドラッグで並べ替え");
+      no.innerHTML = '<span class="grip">≡</span>';
+      no.appendChild(document.createTextNode(String(i + 1)));
+      no.addEventListener("pointerdown", function (ev) { startDrag(ev, li, i); });
       var img = document.createElement("img");
       img.className = "clip-thumb"; img.loading = "lazy"; img.alt = "";
       img.src = "https://i.ytimg.com/vi/" + it.id + "/mqdefault.jpg";
@@ -368,7 +400,12 @@
       act.appendChild(btn("↑", function () { move(i, -1); }, i === 0, "上へ"));
       act.appendChild(btn("↓", function () { move(i, 1); }, i === state.items.length - 1, "下へ"));
       act.appendChild(btn("編集", function () { startEdit(i); }));
-      act.appendChild(btn("複製", function () { state.items.splice(i + 1, 0, Object.assign({}, it)); if (cur > i) cur++; commit(); }));
+      act.appendChild(btn("複製", function () {
+        var curItem = state.items[cur];
+        state.items.splice(i + 1, 0, Object.assign({}, it));
+        if (curItem) cur = state.items.indexOf(curItem);
+        commit(); toast((i + 2) + "番目に複製しました");
+      }));
       act.appendChild(btn("削除", function () { remove(i); }));
 
       li.appendChild(no); li.appendChild(img); li.appendChild(body); li.appendChild(act);
@@ -441,21 +478,118 @@
   }
 
   // ---------- 並べ替え・削除 ----------
-  function move(i, d) {
-    var j = i + d;
-    if (j < 0 || j >= state.items.length) return;
-    var t = state.items[i]; state.items[i] = state.items[j]; state.items[j] = t;
-    if (cur === i) cur = j; else if (cur === j) cur = i;
-    if (editing === i) editing = j; else if (editing === j) editing = i;
+  // 区間を from 番目から to 番目へ動かす。再生中・編集中の区間は、中身で追いかける
+  function moveTo(from, to) {
+    if (from === to || to < 0 || to >= state.items.length) return;
+    var curItem = state.items[cur], editItem = state.items[editing];
+    var it = state.items.splice(from, 1)[0];
+    state.items.splice(to, 0, it);
+    if (curItem) cur = state.items.indexOf(curItem);
+    if (editItem) editing = state.items.indexOf(editItem);
     commit();
   }
+  function move(i, d) { moveTo(i, i + d); }
+
+  // 削除は確認なしですぐ消して、数秒だけ「元に戻す」を出す
+  var lastRemoved = null;
   function remove(i) {
-    if (!confirm((i + 1) + "番目「" + nameOf(state.items[i]) + "」を削除しますか？")) return;
+    var it = state.items[i];
+    var wasCurrent = (i === cur && mode === "list");
+    var curItem = state.items[cur];
     state.items.splice(i, 1);
-    if (cur === i) { cur = -1; if (mode === "list") { mode = "idle"; whenReady(function () { player.stopVideo(); }); } }
-    else if (cur > i) cur--;
+    if (wasCurrent) {
+      cur = -1; mode = "idle";
+      whenReady(function () { player.stopVideo(); });
+    } else if (curItem) cur = state.items.indexOf(curItem);
     if (editing === i) endEdit(); else if (editing > i) editing--;
+    lastRemoved = { item: it, index: i };
     commit();
+    toast("「" + nameOf(it) + "」を削除しました", function () {
+      if (!lastRemoved) return;
+      var ci = state.items[cur];
+      state.items.splice(Math.min(lastRemoved.index, state.items.length), 0, lastRemoved.item);
+      if (ci) cur = state.items.indexOf(ci);
+      if (editing >= lastRemoved.index) editing++;
+      lastRemoved = null;
+      commit();
+      toast("元に戻しました");
+    });
+  }
+
+  // ---------- 下に出るお知らせ（元に戻す付き） ----------
+  var toastTimer = null, toastUndo = null;
+  function toast(text, undo) {
+    $("toast-text").textContent = text;
+    toastUndo = undo || null;
+    $("toast-undo").hidden = !undo;
+    $("toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $("toast").hidden = true; toastUndo = null; }, undo ? 6000 : 2200);
+  }
+  $("toast-undo").addEventListener("click", function () {
+    var fn = toastUndo; toastUndo = null;
+    $("toast").hidden = true;
+    if (fn) fn();
+  });
+
+  // ---------- ドラッグで並べ替え ----------
+  // 動かしている間は区間を見た目で動かすだけにして、離したときに1回だけ並べ替える
+  var drag = null;
+  function startDrag(ev, li, from) {
+    if (ev.button != null && ev.button !== 0) return;
+    if (state.items.length < 2) return;
+    ev.preventDefault();
+    var lis = Array.prototype.slice.call($("clip-list").children);
+    drag = {
+      li: li, from: from, to: from, lis: lis,
+      startY: ev.clientY + window.scrollY, lastClientY: ev.clientY,
+      mids: lis.map(function (x) { var r = x.getBoundingClientRect(); return r.top + window.scrollY + r.height / 2; }),
+      raf: 0
+    };
+    li.classList.add("dragging");
+    document.body.classList.add("is-dragging");
+    window.addEventListener("pointermove", onDragMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+    drag.raf = requestAnimationFrame(autoScroll);
+  }
+  function updateDrag() {
+    var y = drag.lastClientY + window.scrollY;
+    drag.li.style.transform = "translateY(" + (y - drag.startY) + "px)";
+    // 自分以外の区間のうち、真ん中が指より上にあるものの数 = 移動先
+    var to = 0;
+    drag.mids.forEach(function (m, k) { if (k !== drag.from && m < y) to++; });
+    drag.to = to;
+    drag.lis.forEach(function (x) { x.classList.remove("drop-above", "drop-below"); });
+    if (to < drag.from) drag.lis[to].classList.add("drop-above");
+    else if (to > drag.from) drag.lis[to].classList.add("drop-below");
+  }
+  function onDragMove(ev) {
+    if (!drag) return;
+    drag.lastClientY = ev.clientY;
+    updateDrag();
+  }
+  // 画面の上端・下端に近づいたら、ゆっくりスクロールする
+  function autoScroll() {
+    if (!drag) return;
+    var y = drag.lastClientY, edge = 70, v = 0;
+    if (y < edge) v = -Math.ceil((edge - y) / 6);
+    else if (y > window.innerHeight - edge) v = Math.ceil((y - (window.innerHeight - edge)) / 6);
+    if (v) { window.scrollBy(0, v); updateDrag(); }
+    drag.raf = requestAnimationFrame(autoScroll);
+  }
+  function endDrag() {
+    if (!drag) return;
+    var d = drag; drag = null;
+    cancelAnimationFrame(d.raf);
+    window.removeEventListener("pointermove", onDragMove);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
+    document.body.classList.remove("is-dragging");
+    d.li.classList.remove("dragging");
+    d.li.style.transform = "";
+    d.lis.forEach(function (x) { x.classList.remove("drop-above", "drop-below"); });
+    if (d.to !== d.from) moveTo(d.from, d.to);
   }
 
   // ---------- プレイヤー ----------
@@ -627,11 +761,35 @@
     if (editing >= 0 && state.items[editing]) {
       state.items[editing] = r;
       endEdit();
+      commit(); toast("更新しました");
     } else {
       state.items.push(r);
       clearForm();
+      if (mode === "preview") mode = "idle";
+      commit(); toast(state.items.length + "番目に追加しました");
     }
-    commit();
+  });
+  // 入力欄で Enter を押したら、追加（編集中なら更新）
+  ["f-url", "f-start", "f-end", "f-label"].forEach(function (id) {
+    $(id).addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" && !ev.isComposing) { ev.preventDefault(); $("f-submit").click(); }
+    });
+  });
+
+  // 再生中・プレビュー中の動画を、今の位置を開始にして追加フォームへ
+  $("btn-grab").addEventListener("click", function () {
+    var pid = ready && playingId();
+    if (!pid) { toast("先に動画を再生するか、プレビューで開いてください"); return; }
+    if (editing >= 0) endEdit();
+    $("f-url").value = "https://youtu.be/" + pid;
+    $("f-start").value = fmtTime(player.getCurrentTime());
+    $("f-end").value = ""; $("f-label").value = "";
+    showFormError("");
+    // プレイリストの自動の次送りを止めて、そのまま終了位置を探せるようにする
+    if (mode === "list") { mode = "preview"; cur = -1; render(); }
+    $("f-end").focus({ preventScroll: true });
+    $("form-heading").scrollIntoView({ behavior: "smooth", block: "start" });
+    toast("開始を入れました。終わりの位置で「⏱ 今の位置」を押してください");
   });
   $("f-cancel").addEventListener("click", function () { endEdit(); clearForm(); });
 
