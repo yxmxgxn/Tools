@@ -1,0 +1,87 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>使い方 | Cliplist</title>
+<meta name="description" content="Cliplist（YouTubeの区間プレイリスト）の使い方。区間の作り方、並べ替え、共有と短縮URL、CSVでの編集、気をつけること。">
+<meta property="og:title" content="使い方 | Cliplist">
+<meta property="og:description" content="Cliplist（YouTubeの区間プレイリスト）の使い方。区間の作り方、並べ替え、共有と短縮URL、CSVでの編集、気をつけること。">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Cliplist">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://cliplist.yxmxgxn.workers.dev/about/">
+<meta property="og:image" content="https://cliplist.yxmxgxn.workers.dev/ogp.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://cliplist.yxmxgxn.workers.dev/about/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+<style>
+  main { padding-top: 1.5rem; font-size: 15px; }
+  .back { font-size: 14px; margin: 0 0 1rem; }
+  .back a, .doc-foot a { color: var(--accent); }
+  .h1-sub { font-size: 0.95rem; font-weight: normal; color: var(--muted); margin-left: 0.4em; }
+  h3 { font-weight: 700; margin: 1.5rem 0 0.25rem; }
+  ul { padding-left: 1.2em; margin: 0.25rem 0; }
+  li { margin: 0.3rem 0; }
+  pre.code { background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  .doc-foot { margin-top: 2.5rem; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="/">← Cliplist に戻る</a></p>
+    <h1>使い方 <span class="h1-sub">About</span></h1>
+    <p>Cliplist（クリップリスト）は、YouTube動画の好きな区間（開始〜終了）だけを並べて、続けて再生するプレイリストです。ライブの好きな場面、番組の名セリフ、曲のサビだけ…を、リンクひとつで人に渡せます。登録やログインはいりません。</p>
+
+    <h3>区間を作る</h3>
+    <ul>
+      <li>動画のURLを貼って、開始と終了を入れて「追加」。入力欄で Enter を押しても追加できます。URLに <code>t=</code> が付いていれば、開始に自動で入ります。</li>
+      <li>時間は <code>83</code>・<code>1:23</code>・<code>1:02:03</code>・<code>1m23s</code> のどれでも入力できます。終了を空にすると、動画の最後までです。</li>
+      <li>「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。</li>
+      <li><code>-10</code>〜<code>+10</code> で秒をずらせます。プレビュー中は、プレイヤーもその位置に飛ぶので、聞きながら合わせられます。</li>
+      <li>再生中に「＋ ここから区間を作る」を押すと、その動画と今の位置が追加フォームに入ります。</li>
+    </ul>
+
+    <h3>並べる・直す</h3>
+    <ul>
+      <li>区間の左端の <b>≡</b> をつかんで上下にドラッグすると、順番を入れ替えられます（指でも動きます）。</li>
+      <li>「編集」で開始・終了・ラベルを直せます。「削除」はすぐ消えますが、数秒のあいだ「元に戻す」が出ます。</li>
+    </ul>
+
+    <h3>共有する</h3>
+    <ul>
+      <li>プレイリストは<strong>URLにまるごと入ります</strong>。「URLをコピー」して送れば、相手も同じ順番・同じ区間で再生できます。アドレス欄のURLも、編集するたびに同じ形に更新されます。</li>
+      <li>「チャプター名を共有URLに入れる」を外すと、URLが短くなります。開いた人の画面には、チャプター名のかわりに動画のタイトルが出ます。</li>
+      <li>「短縮URLを発行」すると、<code>cliplist.yxmxgxn.workers.dev/Ab3xK9qZ</code> のような短いURLが作れます。<strong>発行した時点の内容で固定</strong>され、あとから変わることはありません。内容を変えたら、もう一度発行してください（前に配ったURLは、そのときの内容のまま残ります）。同じ内容なら、同じ短縮URLになります。</li>
+      <li>短縮URLで開いた人が編集すると、アドレス欄はふつうの長いURLに切り替わります。</li>
+      <li>区間が多すぎてURLが長くなると、SNSによっては途中で切れることがあります。そのときは短縮URLか「テキストでコピー」を使ってください。</li>
+    </ul>
+
+    <h3>表計算で編集する（CSV / TSV）</h3>
+    <ul>
+      <li>「動画ID, 開始(秒), 終了(秒), チャプター名」の表で書き出して、Excel や Googleスプレッドシートで編集し、また読み込めます。</li>
+      <li>編集するのは1〜4列目だけです。1列目はURLでもかまいません。1行目の見出しはあってもなくても大丈夫です。5列目以降（開始・終了の表示とURL）は見るための列で、読み込みでは使いません。</li>
+      <li>時間は秒の数値（<code>83.5</code> など）で書き出します。<code>1:23</code> のような形だと、Excel が時刻として読み替えて崩すことがあるためです。読み込みは <code>83</code>・<code>1:23</code>・<code>0:01:23</code> のどれでも大丈夫です。</li>
+      <li>「まとめて追加」は、1行に1区間、<code>URL 開始-終了 ラベル</code> の順で書きます（開始・終了・ラベルは省略可）。Cliplist の共有URLを貼ると、その中身を全部追加します。</li>
+    </ul>
+
+    <h3>気をつけること</h3>
+    <ul>
+      <li>再生はYouTube公式の埋め込みプレイヤーです。<strong>埋め込みが禁止されている動画は再生できない</strong>ので、印を付けて次へ飛ばします。読み込めない区間も、何度かやり直してから次へ進みます。</li>
+      <li>広告が入ることがあります。広告のあとに区間の続きから再生されます。</li>
+      <li>スマホでは、最初の1回だけ ▶ を押す必要があります（ブラウザの自動再生の制限のため）。自動で次へ進めなかったときも ▶ を押してください。</li>
+      <li>編集中のプレイリストは、このブラウザの中に保存されます。サーバーに送るのは「短縮URLを発行」したときだけで、そのときのプレイリスト（動画ID・時間・チャプター名・タイトル）を保存します。名前やアカウントなど、ほかの情報は送りません。</li>
+    </ul>
+
+  <p class="doc-foot"><a href="/">Cliplist を開く</a> ・ <a href="/tech/">仕組み（Tech）</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+</body>
+</html>
