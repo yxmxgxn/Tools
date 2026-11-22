@@ -1,0 +1,68 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>仕組み | Cliplist</title>
+<meta name="description" content="Cliplist（YouTubeの区間プレイリスト）の仕組み。長いURLの形と互換性の約束、短縮URLの作り、使っている技術。">
+<meta property="og:title" content="仕組み | Cliplist">
+<meta property="og:description" content="Cliplist（YouTubeの区間プレイリスト）の仕組み。長いURLの形と互換性の約束、短縮URLの作り、使っている技術。">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Cliplist">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://cliplist.yxmxgxn.workers.dev/tech/">
+<meta property="og:image" content="https://cliplist.yxmxgxn.workers.dev/ogp.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://cliplist.yxmxgxn.workers.dev/tech/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+<style>
+  main { padding-top: 1.5rem; font-size: 15px; }
+  .back { font-size: 14px; margin: 0 0 1rem; }
+  .back a, .doc-foot a { color: var(--accent); }
+  .h1-sub { font-size: 0.95rem; font-weight: normal; color: var(--muted); margin-left: 0.4em; }
+  h3 { font-weight: 700; margin: 1.5rem 0 0.25rem; }
+  ul { padding-left: 1.2em; margin: 0.25rem 0; }
+  li { margin: 0.3rem 0; }
+  pre.code { background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  .doc-foot { margin-top: 2.5rem; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="/">← Cliplist に戻る</a></p>
+    <h1>仕組み <span class="h1-sub">Tech</span></h1>
+    <h3>長いURL（第1版）</h3>
+    <p>プレイリストをまるごとクエリに入れます。区間の数だけ <code>c</code> を並べます。</p>
+    <pre class="code">https://cliplist.yxmxgxn.workers.dev/?title=名前&amp;c=動画ID~開始秒~終了秒~チャプター名&amp;c=…&amp;loop=1</pre>
+    <ul>
+      <li>開始秒・終了秒は0.1秒単位の数値。終了が空なら最後まで。<code>title</code>・チャプター名・<code>loop</code> は省略できます。</li>
+      <li><strong>この形は固定します。</strong>あとで形を変えるときは <code>v=2</code> のような版の印を付けて区別し、印のないURLはずっと第1版として読みます。一度配ったURLが開けなくなることはありません。</li>
+    </ul>
+
+    <h3>短縮URL</h3>
+    <ul>
+      <li><code>/&lt;8文字の英数字&gt;</code>。共有した時点のプレイリストを預かって、短い名前を付けるだけのシェア専用URLです。編集・削除はありません。</li>
+      <li>中身はURLの文字列ではなく、版つきのデータ <code>{v:1, title, loop, items:[{id, s, e, label}]}</code> として保存します。URLの書き方を変えても、保存済みの短縮URLは読めます。</li>
+      <li>短縮コードは中身のハッシュ（SHA-256）から作るので、同じ中身なら同じコードになります。万一ほかの中身と重なったときは、1文字ずつ長くします。</li>
+      <li>保存するのは、動画ID・時間・チャプター名・タイトル・くり返しの設定だけです。届いた中身は検査して作り直してから保存します。</li>
+    </ul>
+
+    <h3>作り</h3>
+    <ul>
+      <li>画面は1枚のHTMLで、再生は YouTube IFrame Player API。区間の終わりは <code>endSeconds</code> と0.2秒ごとの監視の両方で見ています。</li>
+      <li>配信と短縮URLは Cloudflare Workers、短縮URLの保存先は Workers KV です。</li>
+      <li>動画のタイトルは YouTube の oEmbed から取ります（URLには入れません）。</li>
+    </ul>
+
+  <p class="doc-foot"><a href="/">Cliplist を開く</a> ・ <a href="/about/">使い方（About）</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+</body>
+</html>
