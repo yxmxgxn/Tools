@@ -121,6 +121,12 @@
   .time-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .time-row input { width: 8em; }
   .time-row button { font-size: 13px; padding: 4px 8px; }
+  /* ±秒ボタン。4つをひとかたまりにして、狭い画面でもばらけないようにする */
+  .nudge { display: inline-flex; }
+  .nudge button { min-width: 40px; padding: 4px 6px; border-radius: 0; margin-left: -1px; font-variant-numeric: tabular-nums; }
+  .nudge button:first-child { border-radius: var(--radius) 0 0 var(--radius); margin-left: 0; }
+  .nudge button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+  .nudge button:hover { position: relative; z-index: 1; }
   .form-grid input.wide { width: 100%; }
   .form-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
@@ -188,13 +194,15 @@
 
     <label for="f-start">開始</label>
     <div class="time-row">
-      <input type="text" id="f-start" placeholder="1:23" autocomplete="off" inputmode="decimal">
+      <input type="text" id="f-start" placeholder="1:23" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <span class="nudge" data-for="f-start"><button type="button" data-d="-10">-10</button><button type="button" data-d="-1">-1</button><button type="button" data-d="1">+1</button><button type="button" data-d="10">+10</button></span>
       <button type="button" id="f-start-now" title="プレイヤーの現在位置を入れる">⏱ 今の位置</button>
     </div>
 
     <label for="f-end">終了</label>
     <div class="time-row">
-      <input type="text" id="f-end" placeholder="空欄で最後まで" autocomplete="off" inputmode="decimal">
+      <input type="text" id="f-end" placeholder="空欄=最後まで" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <span class="nudge" data-for="f-end"><button type="button" data-d="-10">-10</button><button type="button" data-d="-1">-1</button><button type="button" data-d="1">+1</button><button type="button" data-d="10">+10</button></span>
       <button type="button" id="f-end-now" title="プレイヤーの現在位置を入れる">⏱ 今の位置</button>
     </div>
 
@@ -208,7 +216,8 @@
   </div>
   <p id="f-err" class="error-text" hidden></p>
   <p class="hint-text">時間は <code>83</code>・<code>1:23</code>・<code>1:02:03</code>・<code>1m23s</code> のどれでも入力できます。URLに <code>t=</code> が付いていれば開始に自動で入ります。<br>
-  「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。入力欄で Enter を押しても追加できます。</p>
+  「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。入力欄で Enter を押しても追加できます。<br>
+  <code>-10</code>〜<code>+10</code> で秒をずらせます。プレビュー中なら、プレイヤーもその位置に飛ぶので、聞きながら合わせられます。</p>
 
   <h2>共有</h2>
   <p class="hint-text" style="margin:0">このURLにプレイリストがまるごと入っています。アドレスバーのURLも同じものに自動で更新されます。</p>
@@ -223,6 +232,34 @@
     </div>
     <p id="share-warn" class="hint-text" hidden></p>
   </div>
+
+  <h2>表計算で編集（CSV / TSV）</h2>
+  <p class="hint-text" style="margin:0">プレイリストを「動画ID・開始・終了・チャプター名」の表で書き出して、Excel や Googleスプレッドシートで編集し、また読み込めます。</p>
+  <div class="share-buttons">
+    <button type="button" id="ex-csv">CSVで保存</button>
+    <button type="button" id="ex-tsv">TSVで保存</button>
+    <button type="button" id="ex-copy" title="Googleスプレッドシートなどにそのまま貼り付けられます">表としてコピー</button>
+  </div>
+  <div class="option-row">
+    <span>読み込み方:</span>
+    <label><input type="radio" name="imp-mode" value="replace" checked> 今のリストと置き換える</label>
+    <label><input type="radio" name="imp-mode" value="append"> 末尾に追加する</label>
+  </div>
+  <div class="share-buttons">
+    <label class="button-primary" for="imp-file" style="margin:0">CSV / TSV ファイルを読み込む</label>
+    <input type="file" id="imp-file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" hidden>
+  </div>
+  <details class="howto">
+    <summary>表を貼り付けて読み込む</summary>
+    <textarea id="imp-text" rows="5" placeholder="動画ID&#9;開始(秒)&#9;終了(秒)&#9;チャプター名&#10;dQw4w9WgXcQ&#9;43&#9;47.5&#9;サビ"></textarea>
+    <div class="form-buttons" style="margin-top:6px">
+      <button type="button" id="imp-paste">読み込む</button>
+    </div>
+  </details>
+  <p id="imp-msg" class="hint-text"></p>
+  <p class="hint-text">編集するのは <b>1〜4列目（動画ID, 開始(秒), 終了(秒), チャプター名）</b>だけです。1列目はURLでもかまいません。終了が空なら最後まで。1行目の見出しはあってもなくても大丈夫です。<br>
+  時間は秒の数値（<code>83.5</code> など）で書き出します。<code>1:23</code> のような形だと、Excel が時刻として読み替えて保存時に崩すことがあるためです。読み込みは <code>83</code>・<code>1:23</code>・<code>0:01:23</code> のどれでも大丈夫です。<br>
+  5列目以降（開始・終了の表示とURL）は見るための列で、読み込みでは使いません。</p>
 
   <h2>まとめて追加</h2>
   <details class="howto">
@@ -761,6 +798,28 @@
   $("f-start-now").addEventListener("click", function () { setNow("f-start"); });
   $("f-end-now").addEventListener("click", function () { setNow("f-end"); });
 
+  // ±秒ボタン。空欄なら、開始は0秒・終了は開始の位置から数える
+  document.querySelectorAll(".nudge").forEach(function (box) {
+    var field = box.getAttribute("data-for");
+    box.addEventListener("click", function (ev) {
+      var b = ev.target.closest("button");
+      if (!b) return;
+      showFormError("");
+      var cur0 = parseTime($(field).value);
+      if (cur0 == null || isNaN(cur0)) {
+        var st = parseTime($("f-start").value);
+        cur0 = (field === "f-end" && st != null && !isNaN(st)) ? st : 0;
+      }
+      var t = Math.max(0, round1(cur0 + Number(b.getAttribute("data-d"))));
+      $(field).value = fmtTime(t);
+      // プレイヤーに同じ動画が出ていれば、その位置へ飛んで確かめられるようにする
+      var v = parseYouTube($("f-url").value);
+      if (ready && v && playingId() === v.id && mode !== "list") {
+        try { player.seekTo(t, true); } catch (e) {}
+      }
+    });
+  });
+
   $("f-submit").addEventListener("click", function () {
     var r = readForm();
     if (r.err) { showFormError(r.err); return; }
@@ -855,6 +914,141 @@
     });
     $("bulk-msg").textContent = added + "件追加しました" + (bad ? "（" + bad + "行は読み取れませんでした）" : "");
     if (added) { $("bulk").value = ""; commit(); }
+  });
+
+  // ---------- CSV / TSV ----------
+  // 確認用の表示列は h:mm:ss にする。0:43 のままだと Excel が「0時43分」と表示してしまう
+  function hms(x) {
+    x = round1(x);
+    var h = Math.floor(x / 3600), mi = Math.floor((x % 3600) / 60), sec = round1(x - h * 3600 - mi * 60);
+    return h + ":" + (mi < 10 ? "0" : "") + mi + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+  // 編集するのは1〜4列目（時間は秒の数値。Excel を通しても小数まで壊れない）。
+  // 5列目以降は人が見るための確認用で、読み込みでは使わない
+  var HEADER = ["動画ID", "開始(秒)", "終了(秒)", "チャプター名", "開始(表示)", "終了(表示)", "URL"];
+  function tableRows() {
+    return state.items.map(function (it) {
+      return [it.id, fmtNum(it.s), it.e == null ? "" : fmtNum(it.e), it.label || "",
+        hms(it.s), it.e == null ? "" : hms(it.e),
+        "https://youtu.be/" + it.id + (it.s >= 1 ? "?t=" + Math.floor(it.s) : "")];
+    });
+  }
+  function toCSV(rows) {
+    return rows.map(function (r) {
+      return r.map(function (c) { c = String(c); return /[",\r\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(",");
+    }).join("\r\n") + "\r\n";
+  }
+  function toTSV(rows) {
+    return rows.map(function (r) { return r.map(function (c) { return String(c).replace(/[\t\r\n]+/g, " "); }).join("\t"); }).join("\r\n") + "\r\n";
+  }
+  // ファイル名は英数字だけにする（日本語の名前だと "download" に置き換えるブラウザがあるため）
+  function fileBase() {
+    var t = (state.title || "").replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
+    if (t.length >= 3) return "yt-clips_" + t;
+    var d = new Date();
+    return "yt-clips_" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
+  }
+  function download(text, name, mime) {
+    // 先頭に BOM を付けて、Excel でも文字化けしない UTF-8 にする
+    var blob = new Blob(["﻿" + text], { type: mime + ";charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name; a.hidden = true;
+    document.body.appendChild(a); a.click();
+    // すぐ消すとファイル名が付かないブラウザがあるので、少し待ってから片付ける
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  function needItems() { if (!state.items.length) { toast("まだ区間がありません"); return false; } return true; }
+  $("ex-csv").addEventListener("click", function () {
+    if (!needItems()) return;
+    download(toCSV([HEADER].concat(tableRows())), fileBase() + ".csv", "text/csv");
+  });
+  $("ex-tsv").addEventListener("click", function () {
+    if (!needItems()) return;
+    download(toTSV([HEADER].concat(tableRows())), fileBase() + ".tsv", "text/tab-separated-values");
+  });
+  $("ex-copy").addEventListener("click", function () {
+    if (!needItems()) return;
+    copy(toTSV([HEADER].concat(tableRows())), this);
+  });
+
+  // CSV と TSV のどちらでも読む。区切りは1行目にタブがあるかで決める。"…" の囲みにも対応
+  function parseTable(text) {
+    text = String(text).replace(/^﻿/, "");
+    var first = text.split(/\r?\n/).filter(function (l) { return l.trim() !== ""; })[0] || "";
+    var d = first.indexOf("\t") >= 0 ? "\t" : (first.indexOf(",") >= 0 ? "," : (first.indexOf(";") >= 0 ? ";" : "\t"));
+    var rows = [], row = [], cell = "", q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += ch;
+      } else if (ch === '"' && cell === "") q = true;
+      else if (ch === d) { row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && text[i + 1] === "\n") i++;
+        row.push(cell); rows.push(row); row = []; cell = "";
+      } else cell += ch;
+    }
+    if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  function rowsToItems(rows) {
+    var items = [], bad = [], seenData = false;
+    rows.forEach(function (r, n) {
+      var c = r.map(function (x) { return String(x).trim(); });
+      if (!c.some(function (x) { return x !== ""; })) return;       // 空行
+      // 1列目のIDが表計算ソフトに壊された（先頭の - や = で式扱い、数字だけで指数表記など）ときは、
+      // 5列目以降にある URL で補う
+      var v = parseYouTube(c[0]);
+      for (var k = 4; !v && k < c.length; k++) if (/youtu/.test(c[k])) v = parseYouTube(c[k]);
+      if (!v) { if (!seenData) return; bad.push(n + 1); return; }   // データより前の読めない行は見出しとみなす
+      seenData = true;
+      var s = c[1] ? parseTime(c[1]) : (v.t != null ? v.t : 0);
+      var e = c[2] ? parseTime(c[2]) : v.end;
+      if (s == null || isNaN(s) || (e != null && isNaN(e))) { bad.push(n + 1); return; }
+      if (e != null && e <= s) { bad.push(n + 1); return; }
+      items.push({ id: v.id, s: round1(s), e: e == null ? null : round1(e), label: (c[3] || "").slice(0, 60) });
+    });
+    return { items: items, bad: bad };
+  }
+  function importText(text) {
+    var r = rowsToItems(parseTable(text));
+    var msg = $("imp-msg");
+    if (!r.items.length) {
+      msg.textContent = "読み込める行がありませんでした。1列目に動画IDかURLがあるか確認してください。";
+      return;
+    }
+    var replace = document.querySelector('input[name="imp-mode"]:checked').value === "replace";
+    var before = state.items.slice();
+    if (replace) {
+      state.items = r.items;
+      cur = -1; if (mode === "list") { mode = "idle"; whenReady(function () { player.stopVideo(); }); }
+      endEdit();
+    } else {
+      state.items = state.items.concat(r.items);
+    }
+    commit();
+    msg.textContent = r.items.length + "区間を" + (replace ? "読み込みました（置き換え）" : "末尾に追加しました") +
+      (r.bad.length ? "。読めなかった行: " + r.bad.slice(0, 10).join(", ") + (r.bad.length > 10 ? " ほか" : "") + "行目" : "。");
+    toast(r.items.length + "区間を読み込みました", function () {
+      state.items = before; cur = -1;
+      if (mode === "list") { mode = "idle"; whenReady(function () { player.stopVideo(); }); }
+      commit(); toast("読み込む前に戻しました");
+    });
+  }
+  $("imp-file").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () { importText(reader.result); };
+    reader.onerror = function () { $("imp-msg").textContent = "ファイルを読めませんでした。"; };
+    reader.readAsText(f, "utf-8");
+    this.value = "";   // 同じファイルをもう一度選んでも読めるように
+  });
+  $("imp-paste").addEventListener("click", function () {
+    if (!$("imp-text").value.trim()) return;
+    importText($("imp-text").value);
+    $("imp-text").value = "";
   });
 
   // ---------- 共有 ----------
