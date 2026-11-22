@@ -1,7 +1,8 @@
 // Cliplist（https://cliplist.yxmxgxn.workers.dev/）のWorker。
 // YouTubeの好きな区間をつないで再生するプレイリストのサイト。画面は public/ の静的ファイル。
 //
-//   POST /api/shorten   本文 {v:1, title, loop, items:[{id,s,e,label}]} → {"code": "Ab3xK9qZ", "url": "https://…/Ab3xK9qZ"}
+//   POST /api/shorten   本文 {v:1, loop, items:[{id,s,e}]} → {"code": "Ab3xK9qZ", "url": "https://…/Ab3xK9qZ"}
+//                       （タイトル・チャプター名が届いても保存しない）
 //   GET  /api/status    短縮が使えるか（KVが付いているか）→ {"ok": true|false}
 //   GET  /<code>        短縮URL。トップと同じ画面を返し、画面が /api/clip/<code> で中身を読む
 //                       （アドレス欄は短縮URLのまま。編集したら画面側で長いURLに切り替わる）
@@ -27,8 +28,6 @@ const SHORT_RE = /^\/([0-9A-Za-z]{8,12})\/?$/;
 
 const MAX_BODY = 32_000;
 const MAX_ITEMS = 300;
-const MAX_LABEL = 60;
-const MAX_TITLE = 80;
 const MAX_SEC = 360_000;        // 100時間。ライブ配信のアーカイブでも足りる長さ
 const ID_RE = /^[A-Za-z0-9_-]{11}$/;
 const B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -60,10 +59,12 @@ function rateHit(ip) {
 // URLの文字列ではなく、データとして保存する。URLの書き方をあとで変えても、保存済みの中身は読める。
 //   { v: 1, title: "", loop: false, items: [{ id, s, e, label }] }
 //   id: 動画ID(11文字) / s: 開始秒 / e: 終了秒（null で最後まで）/ label: チャプター名（空なら省略）
+//
+// 短縮URLに保存するのは、動画ID・時間・くり返しの設定だけ。タイトルとチャプター名は保存しない
+// （誰でも見られる公開情報だけを預かる。名前も渡したい人は、名前がURLに入った長いURLを使う）。
+// title / label の欄は第1版の形として残しておき、いつも空にする
 const DATA_VERSION = 1;
 const round1 = (x) => Math.round(x * 10) / 10;
-// 制御文字を消して、前後の空白を落とす
-const clean = (s, max) => String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
 
 // 届いたデータを検査して作り直す。区間がひとつも無ければ null
 export function normalizeData(d) {
@@ -78,12 +79,10 @@ export function normalizeData(d) {
     let e = it.e == null || it.e === '' ? null : Number(it.e);
     if (e != null && (!Number.isFinite(e) || e <= s || e > MAX_SEC)) e = null;
     const out = { id: String(it.id), s: round1(s), e: e == null ? null : round1(e) };
-    const label = clean(it.label, MAX_LABEL);
-    if (label) out.label = label;
     items.push(out);
   }
   if (!items.length) return null;
-  const data = { v: DATA_VERSION, title: clean(d.title, MAX_TITLE), loop: d.loop === true, items };
+  const data = { v: DATA_VERSION, title: '', loop: d.loop === true, items };
   return data;
 }
 
