@@ -121,6 +121,12 @@
   .time-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .time-row input { width: 8em; }
   .time-row button { font-size: 13px; padding: 4px 8px; }
+  /* ±秒ボタン。4つをひとかたまりにして、狭い画面でもばらけないようにする */
+  .nudge { display: inline-flex; }
+  .nudge button { min-width: 40px; padding: 4px 6px; border-radius: 0; margin-left: -1px; font-variant-numeric: tabular-nums; }
+  .nudge button:first-child { border-radius: var(--radius) 0 0 var(--radius); margin-left: 0; }
+  .nudge button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+  .nudge button:hover { position: relative; z-index: 1; }
   .form-grid input.wide { width: 100%; }
   .form-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
@@ -188,13 +194,15 @@
 
     <label for="f-start">開始</label>
     <div class="time-row">
-      <input type="text" id="f-start" placeholder="1:23" autocomplete="off" inputmode="decimal">
+      <input type="text" id="f-start" placeholder="1:23" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <span class="nudge" data-for="f-start"><button type="button" data-d="-10">-10</button><button type="button" data-d="-1">-1</button><button type="button" data-d="1">+1</button><button type="button" data-d="10">+10</button></span>
       <button type="button" id="f-start-now" title="プレイヤーの現在位置を入れる">⏱ 今の位置</button>
     </div>
 
     <label for="f-end">終了</label>
     <div class="time-row">
-      <input type="text" id="f-end" placeholder="空欄で最後まで" autocomplete="off" inputmode="decimal">
+      <input type="text" id="f-end" placeholder="空欄=最後まで" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <span class="nudge" data-for="f-end"><button type="button" data-d="-10">-10</button><button type="button" data-d="-1">-1</button><button type="button" data-d="1">+1</button><button type="button" data-d="10">+10</button></span>
       <button type="button" id="f-end-now" title="プレイヤーの現在位置を入れる">⏱ 今の位置</button>
     </div>
 
@@ -208,7 +216,8 @@
   </div>
   <p id="f-err" class="error-text" hidden></p>
   <p class="hint-text">時間は <code>83</code>・<code>1:23</code>・<code>1:02:03</code>・<code>1m23s</code> のどれでも入力できます。URLに <code>t=</code> が付いていれば開始に自動で入ります。<br>
-  「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。入力欄で Enter を押しても追加できます。</p>
+  「プレビューで開く」で動画を出してシークし、「⏱ 今の位置」を押すと、そこが開始・終了になります。入力欄で Enter を押しても追加できます。<br>
+  <code>-10</code>〜<code>+10</code> で秒をずらせます。プレビュー中なら、プレイヤーもその位置に飛ぶので、聞きながら合わせられます。</p>
 
   <h2>共有</h2>
   <p class="hint-text" style="margin:0">このURLにプレイリストがまるごと入っています。アドレスバーのURLも同じものに自動で更新されます。</p>
@@ -242,14 +251,15 @@
   </div>
   <details class="howto">
     <summary>表を貼り付けて読み込む</summary>
-    <textarea id="imp-text" rows="5" placeholder="動画ID&#9;開始&#9;終了&#9;チャプター名&#10;dQw4w9WgXcQ&#9;0:00:43&#9;0:00:47&#9;サビ"></textarea>
+    <textarea id="imp-text" rows="5" placeholder="動画ID&#9;開始(秒)&#9;終了(秒)&#9;チャプター名&#10;dQw4w9WgXcQ&#9;43&#9;47.5&#9;サビ"></textarea>
     <div class="form-buttons" style="margin-top:6px">
       <button type="button" id="imp-paste">読み込む</button>
     </div>
   </details>
   <p id="imp-msg" class="hint-text"></p>
-  <p class="hint-text">列は <b>動画ID（またはURL）, 開始, 終了, チャプター名</b> の順。1行目の見出しはあってもなくても大丈夫です。終了が空なら最後まで。5列目以降（書き出し時のURL列など）は読み込みでは無視します。<br>
-  時間は <code>0:01:23</code> の形で書き出します（<code>1:23</code> だと Excel が「1時23分」と読んでしまうため）。<code>83</code>・<code>1:23</code> も読み込めます。</p>
+  <p class="hint-text">編集するのは <b>1〜4列目（動画ID, 開始(秒), 終了(秒), チャプター名）</b>だけです。1列目はURLでもかまいません。終了が空なら最後まで。1行目の見出しはあってもなくても大丈夫です。<br>
+  時間は秒の数値（<code>83.5</code> など）で書き出します。<code>1:23</code> のような形だと、Excel が時刻として読み替えて保存時に崩すことがあるためです。読み込みは <code>83</code>・<code>1:23</code>・<code>0:01:23</code> のどれでも大丈夫です。<br>
+  5列目以降（開始・終了の表示とURL）は見るための列で、読み込みでは使いません。</p>
 
   <h2>まとめて追加</h2>
   <details class="howto">
@@ -788,6 +798,28 @@
   $("f-start-now").addEventListener("click", function () { setNow("f-start"); });
   $("f-end-now").addEventListener("click", function () { setNow("f-end"); });
 
+  // ±秒ボタン。空欄なら、開始は0秒・終了は開始の位置から数える
+  document.querySelectorAll(".nudge").forEach(function (box) {
+    var field = box.getAttribute("data-for");
+    box.addEventListener("click", function (ev) {
+      var b = ev.target.closest("button");
+      if (!b) return;
+      showFormError("");
+      var cur0 = parseTime($(field).value);
+      if (cur0 == null || isNaN(cur0)) {
+        var st = parseTime($("f-start").value);
+        cur0 = (field === "f-end" && st != null && !isNaN(st)) ? st : 0;
+      }
+      var t = Math.max(0, round1(cur0 + Number(b.getAttribute("data-d"))));
+      $(field).value = fmtTime(t);
+      // プレイヤーに同じ動画が出ていれば、その位置へ飛んで確かめられるようにする
+      var v = parseYouTube($("f-url").value);
+      if (ready && v && playingId() === v.id && mode !== "list") {
+        try { player.seekTo(t, true); } catch (e) {}
+      }
+    });
+  });
+
   $("f-submit").addEventListener("click", function () {
     var r = readForm();
     if (r.err) { showFormError(r.err); return; }
@@ -885,16 +917,19 @@
   });
 
   // ---------- CSV / TSV ----------
-  // 書き出す時間は常に h:mm:ss。1:23 のままだと Excel が「1時23分」と読み替えて 1:23:00 で保存するため
+  // 確認用の表示列は h:mm:ss にする。0:43 のままだと Excel が「0時43分」と表示してしまう
   function hms(x) {
     x = round1(x);
     var h = Math.floor(x / 3600), mi = Math.floor((x % 3600) / 60), sec = round1(x - h * 3600 - mi * 60);
     return h + ":" + (mi < 10 ? "0" : "") + mi + ":" + (sec < 10 ? "0" : "") + sec;
   }
-  var HEADER = ["動画ID", "開始", "終了", "チャプター名", "URL"];
+  // 編集するのは1〜4列目（時間は秒の数値。Excel を通しても小数まで壊れない）。
+  // 5列目以降は人が見るための確認用で、読み込みでは使わない
+  var HEADER = ["動画ID", "開始(秒)", "終了(秒)", "チャプター名", "開始(表示)", "終了(表示)", "URL"];
   function tableRows() {
     return state.items.map(function (it) {
-      return [it.id, hms(it.s), it.e == null ? "" : hms(it.e), it.label || "",
+      return [it.id, fmtNum(it.s), it.e == null ? "" : fmtNum(it.e), it.label || "",
+        hms(it.s), it.e == null ? "" : hms(it.e),
         "https://youtu.be/" + it.id + (it.s >= 1 ? "?t=" + Math.floor(it.s) : "")];
     });
   }
@@ -962,8 +997,10 @@
     rows.forEach(function (r, n) {
       var c = r.map(function (x) { return String(x).trim(); });
       if (!c.some(function (x) { return x !== ""; })) return;       // 空行
-      // 1列目のIDが表計算ソフトに壊された（先頭の - や = で式扱い、数字だけで指数表記など）ときは、5列目のURLで補う
-      var v = parseYouTube(c[0]) || (c[4] ? parseYouTube(c[4]) : null);
+      // 1列目のIDが表計算ソフトに壊された（先頭の - や = で式扱い、数字だけで指数表記など）ときは、
+      // 5列目以降にある URL で補う
+      var v = parseYouTube(c[0]);
+      for (var k = 4; !v && k < c.length; k++) if (/youtu/.test(c[k])) v = parseYouTube(c[k]);
       if (!v) { if (!seenData) return; bad.push(n + 1); return; }   // データより前の読めない行は見出しとみなす
       seenData = true;
       var s = c[1] ? parseTime(c[1]) : (v.t != null ? v.t : 0);
