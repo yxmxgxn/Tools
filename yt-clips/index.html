@@ -224,6 +224,33 @@
     <p id="share-warn" class="hint-text" hidden></p>
   </div>
 
+  <h2>表計算で編集（CSV / TSV）</h2>
+  <p class="hint-text" style="margin:0">プレイリストを「動画ID・開始・終了・チャプター名」の表で書き出して、Excel や Googleスプレッドシートで編集し、また読み込めます。</p>
+  <div class="share-buttons">
+    <button type="button" id="ex-csv">CSVで保存</button>
+    <button type="button" id="ex-tsv">TSVで保存</button>
+    <button type="button" id="ex-copy" title="Googleスプレッドシートなどにそのまま貼り付けられます">表としてコピー</button>
+  </div>
+  <div class="option-row">
+    <span>読み込み方:</span>
+    <label><input type="radio" name="imp-mode" value="replace" checked> 今のリストと置き換える</label>
+    <label><input type="radio" name="imp-mode" value="append"> 末尾に追加する</label>
+  </div>
+  <div class="share-buttons">
+    <label class="button-primary" for="imp-file" style="margin:0">CSV / TSV ファイルを読み込む</label>
+    <input type="file" id="imp-file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" hidden>
+  </div>
+  <details class="howto">
+    <summary>表を貼り付けて読み込む</summary>
+    <textarea id="imp-text" rows="5" placeholder="動画ID&#9;開始&#9;終了&#9;チャプター名&#10;dQw4w9WgXcQ&#9;0:00:43&#9;0:00:47&#9;サビ"></textarea>
+    <div class="form-buttons" style="margin-top:6px">
+      <button type="button" id="imp-paste">読み込む</button>
+    </div>
+  </details>
+  <p id="imp-msg" class="hint-text"></p>
+  <p class="hint-text">列は <b>動画ID（またはURL）, 開始, 終了, チャプター名</b> の順。1行目の見出しはあってもなくても大丈夫です。終了が空なら最後まで。5列目以降（書き出し時のURL列など）は読み込みでは無視します。<br>
+  時間は <code>0:01:23</code> の形で書き出します（<code>1:23</code> だと Excel が「1時23分」と読んでしまうため）。<code>83</code>・<code>1:23</code> も読み込めます。</p>
+
   <h2>まとめて追加</h2>
   <details class="howto">
     <summary>URLを何行も貼って一気に追加する</summary>
@@ -855,6 +882,136 @@
     });
     $("bulk-msg").textContent = added + "件追加しました" + (bad ? "（" + bad + "行は読み取れませんでした）" : "");
     if (added) { $("bulk").value = ""; commit(); }
+  });
+
+  // ---------- CSV / TSV ----------
+  // 書き出す時間は常に h:mm:ss。1:23 のままだと Excel が「1時23分」と読み替えて 1:23:00 で保存するため
+  function hms(x) {
+    x = round1(x);
+    var h = Math.floor(x / 3600), mi = Math.floor((x % 3600) / 60), sec = round1(x - h * 3600 - mi * 60);
+    return h + ":" + (mi < 10 ? "0" : "") + mi + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+  var HEADER = ["動画ID", "開始", "終了", "チャプター名", "URL"];
+  function tableRows() {
+    return state.items.map(function (it) {
+      return [it.id, hms(it.s), it.e == null ? "" : hms(it.e), it.label || "",
+        "https://youtu.be/" + it.id + (it.s >= 1 ? "?t=" + Math.floor(it.s) : "")];
+    });
+  }
+  function toCSV(rows) {
+    return rows.map(function (r) {
+      return r.map(function (c) { c = String(c); return /[",\r\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(",");
+    }).join("\r\n") + "\r\n";
+  }
+  function toTSV(rows) {
+    return rows.map(function (r) { return r.map(function (c) { return String(c).replace(/[\t\r\n]+/g, " "); }).join("\t"); }).join("\r\n") + "\r\n";
+  }
+  // ファイル名は英数字だけにする（日本語の名前だと "download" に置き換えるブラウザがあるため）
+  function fileBase() {
+    var t = (state.title || "").replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
+    if (t.length >= 3) return "yt-clips_" + t;
+    var d = new Date();
+    return "yt-clips_" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
+  }
+  function download(text, name, mime) {
+    // 先頭に BOM を付けて、Excel でも文字化けしない UTF-8 にする
+    var blob = new Blob(["﻿" + text], { type: mime + ";charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name; a.hidden = true;
+    document.body.appendChild(a); a.click();
+    // すぐ消すとファイル名が付かないブラウザがあるので、少し待ってから片付ける
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  function needItems() { if (!state.items.length) { toast("まだ区間がありません"); return false; } return true; }
+  $("ex-csv").addEventListener("click", function () {
+    if (!needItems()) return;
+    download(toCSV([HEADER].concat(tableRows())), fileBase() + ".csv", "text/csv");
+  });
+  $("ex-tsv").addEventListener("click", function () {
+    if (!needItems()) return;
+    download(toTSV([HEADER].concat(tableRows())), fileBase() + ".tsv", "text/tab-separated-values");
+  });
+  $("ex-copy").addEventListener("click", function () {
+    if (!needItems()) return;
+    copy(toTSV([HEADER].concat(tableRows())), this);
+  });
+
+  // CSV と TSV のどちらでも読む。区切りは1行目にタブがあるかで決める。"…" の囲みにも対応
+  function parseTable(text) {
+    text = String(text).replace(/^﻿/, "");
+    var first = text.split(/\r?\n/).filter(function (l) { return l.trim() !== ""; })[0] || "";
+    var d = first.indexOf("\t") >= 0 ? "\t" : (first.indexOf(",") >= 0 ? "," : (first.indexOf(";") >= 0 ? ";" : "\t"));
+    var rows = [], row = [], cell = "", q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += ch;
+      } else if (ch === '"' && cell === "") q = true;
+      else if (ch === d) { row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && text[i + 1] === "\n") i++;
+        row.push(cell); rows.push(row); row = []; cell = "";
+      } else cell += ch;
+    }
+    if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  function rowsToItems(rows) {
+    var items = [], bad = [], seenData = false;
+    rows.forEach(function (r, n) {
+      var c = r.map(function (x) { return String(x).trim(); });
+      if (!c.some(function (x) { return x !== ""; })) return;       // 空行
+      // 1列目のIDが表計算ソフトに壊された（先頭の - や = で式扱い、数字だけで指数表記など）ときは、5列目のURLで補う
+      var v = parseYouTube(c[0]) || (c[4] ? parseYouTube(c[4]) : null);
+      if (!v) { if (!seenData) return; bad.push(n + 1); return; }   // データより前の読めない行は見出しとみなす
+      seenData = true;
+      var s = c[1] ? parseTime(c[1]) : (v.t != null ? v.t : 0);
+      var e = c[2] ? parseTime(c[2]) : v.end;
+      if (s == null || isNaN(s) || (e != null && isNaN(e))) { bad.push(n + 1); return; }
+      if (e != null && e <= s) { bad.push(n + 1); return; }
+      items.push({ id: v.id, s: round1(s), e: e == null ? null : round1(e), label: (c[3] || "").slice(0, 60) });
+    });
+    return { items: items, bad: bad };
+  }
+  function importText(text) {
+    var r = rowsToItems(parseTable(text));
+    var msg = $("imp-msg");
+    if (!r.items.length) {
+      msg.textContent = "読み込める行がありませんでした。1列目に動画IDかURLがあるか確認してください。";
+      return;
+    }
+    var replace = document.querySelector('input[name="imp-mode"]:checked').value === "replace";
+    var before = state.items.slice();
+    if (replace) {
+      state.items = r.items;
+      cur = -1; if (mode === "list") { mode = "idle"; whenReady(function () { player.stopVideo(); }); }
+      endEdit();
+    } else {
+      state.items = state.items.concat(r.items);
+    }
+    commit();
+    msg.textContent = r.items.length + "区間を" + (replace ? "読み込みました（置き換え）" : "末尾に追加しました") +
+      (r.bad.length ? "。読めなかった行: " + r.bad.slice(0, 10).join(", ") + (r.bad.length > 10 ? " ほか" : "") + "行目" : "。");
+    toast(r.items.length + "区間を読み込みました", function () {
+      state.items = before; cur = -1;
+      if (mode === "list") { mode = "idle"; whenReady(function () { player.stopVideo(); }); }
+      commit(); toast("読み込む前に戻しました");
+    });
+  }
+  $("imp-file").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () { importText(reader.result); };
+    reader.onerror = function () { $("imp-msg").textContent = "ファイルを読めませんでした。"; };
+    reader.readAsText(f, "utf-8");
+    this.value = "";   // 同じファイルをもう一度選んでも読めるように
+  });
+  $("imp-paste").addEventListener("click", function () {
+    if (!$("imp-text").value.trim()) return;
+    importText($("imp-text").value);
+    $("imp-text").value = "";
   });
 
   // ---------- 共有 ----------
