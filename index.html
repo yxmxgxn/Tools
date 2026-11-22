@@ -9,10 +9,20 @@
 <meta property="og:title" content="Hello! Tools">
 <meta property="og:description" content="ブラウザだけで完結する小さなウェブツール置き場。">
 <meta property="og:type" content="website">
-<link rel="icon" href="/assets/glasses-icon.png">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
 <link rel="stylesheet" href="/assets/common.css">
 </head>
 <body>
+
+<header class="site-header">
+  <div class="wrap"><a class="brand" href="/">Hello! Tools</a></div>
+</header>
 
 <main>
   <h1>Hello! Tools</h1>
@@ -27,9 +37,21 @@
       </a>
     </li>
     <li>
+      <a class="tool-card" href="/insta-search/">
+        <h3>自分のInstagram投稿 検索ツール</h3>
+        <p>Instagramの書き出しデータ（ZIP）を読み込んで、自分の過去の投稿を日付・本文・サムネで探します。データはブラウザの中だけで処理し、どこにも送信しません。</p>
+      </a>
+    </li>
+    <li>
       <a class="tool-card" href="/post-time/">
         <h3>SNS投稿日時ビューア</h3>
         <p>X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの投稿URLから、投稿日時(タイムスタンプ)とアカウント名を秒まで表示します。</p>
+      </a>
+    </li>
+    <li>
+      <a class="tool-card" href="/sns-account-lookup/">
+        <h3>投稿URLからアカウントを調べる</h3>
+        <p>Instagram・X・Threads・TikTokの投稿URL（またはID）から、今のアカウント名と今日現在のURLを調べます。※このツールだけは、サーバー経由で通信します。</p>
       </a>
     </li>
     <li>

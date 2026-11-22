@@ -1,0 +1,126 @@
+<!Doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+
+<title>How to Use It &amp; How It Works | Find the Account from a Post URL | Hello! Tools</title>
+<meta name="description" content="How to use the Find the Account from a Post URL tool, how it works, how network requests and your input are handled, and its limits.">
+<meta property="og:title" content="How to Use It &amp; How It Works | Find the Account from a Post URL">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/en/sns-account-lookup/about.html">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/sns-account-lookup.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/sns-account-lookup.png">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/en/sns-account-lookup/about.html">
+<link rel="alternate" hreflang="ja" href="https://tools.yxmxgxn.workers.dev/sns-account-lookup/about.html">
+<link rel="alternate" hreflang="en" href="https://tools.yxmxgxn.workers.dev/en/sns-account-lookup/about.html">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<style>
+  main ul, main ol { padding-left: 1.4em; margin: 0.4rem 0; }
+  main li { margin: 0.25rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 0.5rem 0; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  .sa-notice { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 4px; padding: 0.6rem 0.9rem; margin: 1rem 0; font-size: 14px; }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="lang" href="/sns-account-lookup/about.html" hreflang="ja" lang="ja">日本語</a><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <p class="hint-text"><a href="./">← Back to the tool</a></p>
+  <h1>How to Use It &amp; How It Works</h1>
+  <p class="hint-text">Find the Account from a Post URL</p>
+
+  <div class="sa-notice"><strong>This tool makes network requests.</strong> The URLs and IDs you enter are sent through this site's server to Instagram, X, Threads and TikTok to look them up. This is different from the other tools on this site, which run entirely inside your browser.</div>
+
+  <h2>What this tool does</h2>
+  From the <strong>URL (or ID) of a post</strong> on Instagram, X, Threads or TikTok, it tells you:
+  <ul>
+    <li>the <strong>current username</strong></li>
+    <li><strong>today's URL</strong> (the form that includes the username)</li>
+    <li>the time it was posted (calculated from the ID, so it is accurate to the second)</li>
+  </ul>
+  Use it when the username is missing from a URL, when an old URL has a username that has since changed, or when all you have is an ID.
+
+  <h2>How to use it</h2>
+  <ol>
+    <li>Paste the URL (or ID) of the post you want to look up into the box. Put one per line; you can look up to 5 at a time.</li>
+    <li>Press "Look up" to see the service, the current username, today's URL and the time it was posted.</li>
+    <li>Use "Copy username" and "Copy URL" to copy the results.</li>
+  </ol>
+  You can also enter just an ID or code instead of a URL (see "How a bare ID is identified" below).
+
+  <h2>Supported services and inputs</h2>
+  <table>
+    <tr><th>Service</th><th>What you can enter</th></tr>
+    <tr><td>Instagram</td><td><code>instagram.com/p/code</code>, <code>/reel/code</code>, <code>/tv/code</code>, or the code itself (10–11 characters)</td></tr>
+    <tr><td>X</td><td><code>x.com/username/status/number</code> (twitter.com works too), or the number</td></tr>
+    <tr><td>Threads</td><td><code>threads.com/@username/post/code</code> (threads.net works too), or the code</td></tr>
+    <tr><td>TikTok</td><td><code>tiktok.com/@username/video/number</code> (<code>/photo/</code> works too), or the number (19 digits)</td></tr>
+  </table>
+  <p class="hint-text">For TikTok short URLs (<code>vm.tiktok.com/…</code>) and X's <code>t.co/…</code> links, open them in your browser first and paste the long URL that appears.</p>
+
+  <h3>How a bare ID is identified</h3>
+  <ul>
+    <li><strong>Digits only:</strong> X and TikTok IDs both have the time embedded. The number is converted to a time using each service's rule, and the one that gives a plausible year is used. For current IDs, only one of them is plausible.</li>
+    <li><strong>An alphanumeric code of 10–11 characters:</strong> Instagram and Threads codes look the same, so <strong>both are queried</strong> and whichever one finds the post is reported.</li>
+  </ul>
+
+  <h2>How it works</h2>
+  Each service opens the same post from its ID alone, even if the username part of the URL is wrong, and then rewrites the address to one containing the correct (current) username. This tool <strong>just reads where it was rewritten to</strong>.
+  <table>
+    <tr><th>Service</th><th>URL opened with a placeholder name</th><th>How the result is read</th></tr>
+    <tr><td>Instagram</td><td><code>instagram.com/x/p/code/</code></td><td>Look at the URL it redirects to</td></tr>
+    <tr><td>X</td><td><code>x.com/i/status/number</code></td><td>Look at the URL it redirects to</td></tr>
+    <tr><td>Threads</td><td><code>threads.com/i/post/code</code></td><td>Look at the URL it redirects to</td></tr>
+    <tr><td>TikTok</td><td><code>tiktok.com/@i/video/number</code></td><td>It doesn't redirect, so the username is read from inside the page</td></tr>
+  </table>
+  The posting time is worked out from the time embedded in the ID (see the <a href="/en/post-time/">SNS Post Time Viewer</a> page for details).
+  <div class="sa-notice"><strong>This finds the <em>current</em> name.</strong> It cannot tell you the name the account had when the post was made. If the account has been renamed, the new name is shown.</div>
+
+  <h2>How network requests and your input are handled</h2>
+  <ul>
+    <li>The URLs and IDs you enter are received by <strong>this site's server</strong>, which then queries Instagram, X, Threads or TikTok. Your own computer does not connect to those services directly.</li>
+    <li>The server builds the address it queries using <strong>only the ID extracted from your input</strong>. It never connects to the URL you typed.</li>
+    <li>Your input and the results are <strong>not stored</strong>. The program behind this tool doesn't write them to a log either.</li>
+    <li>To prevent overuse, there is a <strong>rate limit</strong> (up to 8 lookups per minute per person, plus an overall cap). For that purpose only, information about where the request came from is used briefly, in Cloudflare's rate-limiting mechanism and in the server's memory, solely to count requests.</li>
+    <li>There is no login, no password and no account linking of any kind.</li>
+    <li>Nothing about you is saved in your browser.</li>
+  </ul>
+  <p class="hint-text">Cloudflare, which serves this site, may keep ordinary access records. The program behind this tool does not store what you enter.</p>
+
+  <h2>Notes and limits</h2>
+  <ul>
+    <li>Only <strong>public posts</strong> are covered. Posts from private accounts and deleted posts come back as "Not found".</li>
+    <li>A service may refuse requests from this server. That also shows up as "Not found".</li>
+    <li>None of these services' mechanisms are officially published. If they change without notice, the tool may stop working.</li>
+    <li>TikTok is read from inside the page, so it is more likely than the other three to break when TikTok changes something.</li>
+    <li>You can look up at most 5 at a time, and there is also a cap on lookups within a given period.</li>
+    <li>If an ID has the wrong number of digits or characters (Instagram and Threads codes are 10–11 characters, X IDs are 15–19 digits, TikTok IDs are 19 digits), the tool explains why, such as "too short" or "too long", before querying any service. It never tries to pad an ID that is one character short, because that would add extra requests to the services.</li>
+    <li>Bluesky isn't supported, because the author of a post can't be found from the ID alone.</li>
+  </ul>
+
+  <p class="related"><a href="/en/post-time/">SNS Post Time Viewer</a> / <a href="./">Back to the tool</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+</body>
+</html>

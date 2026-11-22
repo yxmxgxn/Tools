@@ -1,0 +1,175 @@
+<!Doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; base-uri 'none'; form-action 'none'">
+
+<title>How to Use &amp; How It Works | Search Your Own Instagram Posts | Hello! Tools</title>
+<meta name="description" content="How to use Search Your Own Instagram Posts, how it works, how your data is handled, the date offset in the Instagram app, and its limits.">
+<meta property="og:title" content="How to Use &amp; How It Works | Search Your Own Instagram Posts">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/en/insta-search/about">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/insta-search.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="How to Use &amp; How It Works | Search Your Own Instagram Posts">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/insta-search.png">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/en/insta-search/about">
+<link rel="alternate" hreflang="ja" href="https://tools.yxmxgxn.workers.dev/insta-search/about">
+<link rel="alternate" hreflang="en" href="https://tools.yxmxgxn.workers.dev/en/insta-search/about">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+<style>
+:root{--page-w:980px}
+html{scrollbar-gutter:stable}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:12px 0}
+.safe{}
+.note{border-left:4px solid var(--accent)}
+ol,ul{padding-left:1.4em;margin:6px 0}
+li{margin:4px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="lang" href="/insta-search/about" hreflang="ja" lang="ja">日本語</a><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+<p class="hint-text"><a href="./">← Back to the tool</a></p>
+<h1>How to Use &amp; How It Works</h1>
+<p class="hint-text">Search Your Own Instagram Posts</p>
+
+<div class="card safe">
+  <b>Using a computer is recommended.</b><br>
+  Exporting your data &rarr; choosing the ZIP &rarr; finding the date with this tool &rarr; setting that date in Instagram's Activity page: all of it can be done on a <b>computer alone</b> (you don't need the phone app). The phone steps are included as a supplement for people without a computer.
+</div>
+
+<h2>What this tool does</h2>
+<p>It reads the data you get from Instagram's official "Export your information" feature <b>only inside your browser</b>, so you can search your own past posts.</p>
+<ul>
+  <li><b>Browse thumbnails:</b> choose a year, month and day on the calendar and the thumbnails of that day's posts appear. Photo-only posts without a caption are easy to find by eye.</li>
+  <li><b>Search:</b> search captions by keyword (several words separated by spaces) within the period you chose.</li>
+  <li><b>Search tips:</b> words separated by spaces must all appear (AND). Put <code>-</code> in front of a word to exclude posts that contain it (for example <code>ramen -egg</code>). Full-width / half-width and upper / lower case differences are ignored.</li>
+  <li>You can see each post's date and time, caption and images together. Posts with several images get a badge showing how many.</li>
+</ul>
+<p class="hint-text">Instagram has no way to search your own posts by caption. When you want to delete "that day's post", all you can do is scroll through thumbnails endlessly. That is why I made this tool.</p>
+
+<h2>1. Export your data</h2>
+<p>Only you can export your data. All you need at first is <b>"Media"</b>. You don't have to choose DMs, ads, personal information and so on (this tool does not read them).</p>
+
+<h3>Computer (recommended)</h3>
+<ol class="card">
+  <li>The menu (three lines, "More") on the left &gt; Settings</li>
+  <li><b>Meta Accounts Center</b> at the top &gt; <b>Your information and permissions</b></li>
+  <li><b>Export your information</b> &gt; the <b>Create export</b> button</li>
+  <li>Choose your Instagram account, then <b>Export to device</b></li>
+  <li><b>Customize information</b>: press "Clear all", then check <b>only "Media"</b> under "Your Instagram activity"</li>
+  <li><b>Date range: All time</b> (with the default, only part of the past may be included)</li>
+  <li><b>Format: JSON</b> (HTML is not supported)</li>
+  <li><b>Media quality</b>: whatever you like. <span class="hint-text">If you only want to search, low quality exports faster.</span></li>
+</ol>
+
+<h3>Phone app (Android)</h3>
+<div class="card">
+  <p style="margin:4px 0">Open the three lines at the top right &gt; <b>Meta Accounts Center</b>, then choose the same options as on a computer (from step 3 above).</p>
+</div>
+<p class="hint-text">I could not check the steps on an iPhone, so they are not written here.</p>
+<p class="hint-text">The menu names above are my translation of the Japanese screens and may differ slightly from the English Instagram screens.</p>
+
+<div class="card note">
+  <b>The export takes a while.</b> You will get a notification (email) when it is ready; then download the ZIP. You can use the ZIP <b>without unzipping it</b>.
+</div>
+
+<h2>2. Load it in the tool</h2>
+<ol>
+  <li>On the tool page, press <b>"Choose ZIP file(s)"</b> and choose the ZIP you downloaded. If it was split into several ZIPs, you can choose them all at once.</li>
+  <li>If you prefer an unzipped folder, use <b>"Choose unzipped folder"</b>.</li>
+  <li>When it says "N posts found", you are ready.</li>
+  <li>To just try it first, press <b>"Try the sample"</b>. Fictional posts are shown (your own data is not used).</li>
+</ol>
+<p class="hint-text">Your browser may ask whether to "upload" the file. That is the browser's standard wording; nothing is sent anywhere (see "6. Safety").</p>
+
+<h2 id="open">3. Open the post you found in Instagram</h2>
+<p>Once you know the date of a post from this tool, show the posts of the same date in Instagram's "Activity" page. From there you can not only view them but also delete them, and so on.</p>
+
+<h3>Computer (recommended)</h3>
+<ol class="card">
+  <li>The menu (three lines, "More") on the left &gt; <b>Your activity</b> &gt; <b>Photos and videos</b></li>
+  <li><b>Sort &amp; filter</b></li>
+  <li>Set the <b>start date</b> and <b>end date</b> around the date and time you are looking for</li>
+</ol>
+
+<h3>Phone app (Android)</h3>
+<ol class="card">
+  <li>Three lines at the top right &gt; <b>Your activity</b> &gt; <b>Posts</b></li>
+  <li><b>"All time"</b> at the top center &gt; <b>Date range</b></li>
+  <li>Set the <b>start date</b> and <b>end date</b> around the date and time you are looking for</li>
+</ol>
+<p class="hint-text">The date in the app can be one day off from what this tool shows (see "4. Date and time zone offset" below). If you give the range <b>a margin of a few days on both sides</b>, you will find the post for sure.</p>
+
+<h2>4. Date and time zone offset</h2>
+<div class="card note">
+  <p style="margin:4px 0">This tool shows dates and times in <b>your device's time zone</b>. The date-range filter on Instagram's "Activity &gt; Posts" page, however, seems to work in <b>US Pacific time</b>. So when you set a date in the app, it can be <b>one day off</b> from the date this tool shows.</p>
+</div>
+<ul>
+  <li>The offset appears for posts made in the <b>morning to late afternoon in a time zone that is ahead of Pacific time</b>. For example, in Japan (Japan Standard Time), posts made before 17:00 in winter (16:00 in summer) fall on the previous day in the app. Posts from the evening and night keep the same date. (I tested this with Japan Standard Time.)</li>
+  <li>When the dates differ, the tool shows "<b>In the app (Activity &gt; Posts), set the date range to ◯◯</b>" next to the post.</li>
+  <li>You do not have to match the time exactly: <b>giving a margin of a few days on both sides will always find it.</b></li>
+</ul>
+<table>
+  <tr><th>Season</th><th>Difference between Japan and US Pacific time</th></tr>
+  <tr><td>Winter (about November to March)</td><td>17 hours</td></tr>
+  <tr><td>Summer (about March to November, daylight saving time)</td><td>16 hours</td></tr>
+</table>
+<p class="hint-text">This "Pacific time" behavior is my inference from the few posts I could check (one in winter and one in summer). Within what I checked, it matched what the app showed.</p>
+
+<h2>5. Why you can't jump to the original post</h2>
+<p>The exported data <b>does not contain the URL of your own posts (<code>instagram.com/p/…</code>)</b>. I tried the "everything" JSON export, the media-only JSON export and the HTML export, and the result was the same for all of them. The only URLs included were records of other people's posts that you viewed, liked or saved.</p>
+<p>So this tool cannot take you directly to the original post. Instead, you <b>find the post by its date and caption, then open the posts of that same date in the app</b>.</p>
+
+<h2>6. Safety (your data is never sent anywhere)</h2>
+<div class="card safe">
+  <ul style="margin:4px 0">
+    <li>A setting inside the page (<code>Content-Security-Policy</code>) makes your browser refuse any sending of data to the outside.</li>
+    <li>No outside servers or libraries are used. Unzipping is also done with a standard browser feature. Only the fonts for the on-screen text are loaded from Google Fonts by this site's shared stylesheet. That has nothing to do with your post data, and your post data is not sent.</li>
+    <li>There is no login, no password and no account linking at all.</li>
+    <li><b>Location data (latitude / longitude) and device information are neither read nor shown.</b> Only the images, captions and dates of your posts are read.</li>
+    <li>Files such as DMs, ads and personal information are not read.</li>
+  </ul>
+</div>
+<p><b>You can try it offline.</b> After the page has loaded, you can turn off Wi-Fi or switch on airplane mode and it still works.</p>
+
+<h2>7. Requirements and limits</h2>
+<ul>
+  <li>It is expected to work in recent versions of Chrome, Edge, Safari and Firefox. To read a ZIP as it is, the browser needs <code>DecompressionStream</code> (for example Safari 16.4 or later). In an older browser, unzip the file and choose the folder.</li>
+  <li>A computer is recommended. On a phone, <b>choosing the ZIP</b> is the realistic way (choosing a folder hardly works in phone browsers).</li>
+  <li>If you have many photos and the ZIP is large, it may feel heavy on a phone. Choosing low quality when you export makes it lighter.</li>
+  <li><b>Only "posts" are supported.</b> Reels and everything else are not read.</li>
+  <li>If you choose several exports at once, only the first one is used.</li>
+</ul>
+
+<h2>8. Related tools</h2>
+<div class="card">
+  <b><a href="/en/post-time/">SNS Post Time Viewer</a></b><br>
+  Shows the time of a post to the second from the <b>post URL</b> on X, Instagram, TikTok, Threads, Bluesky, Misskey or Mastodon. Use it when you already know the URL of a post and want its exact time.
+</div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+</body>
+</html>

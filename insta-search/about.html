@@ -1,0 +1,174 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; base-uri 'none'; form-action 'none'">
+
+<title>使い方・仕組み | 自分のInstagram投稿 検索ツール | Hello! Tools</title>
+<meta name="description" content="自分のInstagram投稿 検索ツールの使い方と仕組み、データの扱い、日付のずれ、制限について。">
+<meta property="og:title" content="使い方・仕組み | 自分のInstagram投稿 検索ツール">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/insta-search/about">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/insta-search.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="使い方・仕組み | 自分のInstagram投稿 検索ツール">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/insta-search.png">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/insta-search/about">
+<link rel="alternate" hreflang="ja" href="https://tools.yxmxgxn.workers.dev/insta-search/about">
+<link rel="alternate" hreflang="en" href="https://tools.yxmxgxn.workers.dev/en/insta-search/about">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+<style>
+:root{--page-w:980px}
+html{scrollbar-gutter:stable}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:12px 0}
+.safe{}
+.note{border-left:4px solid var(--accent)}
+ol,ul{padding-left:1.4em;margin:6px 0}
+li{margin:4px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="lang" href="/en/insta-search/about" hreflang="en" lang="en">English</a><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+<p class="hint-text"><a href="./">← ツールに戻る</a></p>
+<h1>使い方・仕組み</h1>
+<p class="hint-text">自分のInstagram投稿 検索ツール</p>
+
+<div class="card safe">
+  <b>基本は、パソコンでの作業をおすすめします。</b><br>
+  書き出し → ZIPを選ぶ → ツールで日付を探す → Instagramのアクティビティで日付を指定、までが、<b>パソコンだけで完結</b>します（スマホのアプリは使いません）。スマホの手順は、パソコンがない人向けの補足として載せています。
+</div>
+
+<h2>このツールでできること</h2>
+<p>Instagramの公式機能「情報のエクスポート（書き出し）」で手に入るデータを、<b>ブラウザの中だけ</b>で読み込み、自分の過去の投稿を探すためのツールです。</p>
+<ul>
+  <li><b>サムネで探す:</b> カレンダーで年月・日を選ぶと、その日の投稿のサムネが並びます。本文のない写真だけの投稿も、目で探せます。</li>
+  <li><b>検索する:</b> キーワード（スペースで複数指定）と日付の範囲で、本文を検索します。</li>
+  <li><b>検索のコツ:</b> 単語をスペースで区切ると、すべてを含む投稿（AND）になります。単語の前に <code>-</code> を付けると、その語を含む投稿を除外します（例: <code>ラーメン -味玉</code>）。全角・半角や大文字・小文字の違いは区別しません。</li>
+  <li>投稿の日時、本文、画像をまとめて見られます。複数枚の投稿には枚数のバッジが付きます。</li>
+</ul>
+<p class="hint-text">Instagramには、自分の投稿を本文で検索する機能がありません。「あの日の投稿を消したい」ときに、サムネを延々とスクロールして探すしかないのが、作った理由です。</p>
+
+<h2>1. データを書き出す</h2>
+<p>書き出せるのは本人だけです。最初に必要なのは<b>「メディア」だけ</b>です。DM・広告・個人情報などは、選ばなくて大丈夫です（このツールは読みません）。</p>
+
+<h3>パソコン（おすすめ）</h3>
+<ol class="card">
+  <li>左の三本線（その他）＞ 設定</li>
+  <li>一番上の <b>Metaアカウント</b> ＞ <b>あなたの情報とアクセス許可</b></li>
+  <li><b>あなたの情報をエクスポート</b> ＞ <b>エクスポートを作成</b> ボタン</li>
+  <li>自分のInstagramのアカウントを選び、<b>デバイスにエクスポート</b></li>
+  <li><b>情報をカスタマイズ</b>：「すべてをクリア」を押してから、<b>「あなたのInstagramアクティビティ」の「メディア」だけ</b>にチェック</li>
+  <li><b>期間：全期間</b>（初期値のままだと、過去の一部だけになることがあります）</li>
+  <li><b>フォーマット：JSON</b>（HTMLは対応していません）</li>
+  <li><b>メディアの画質</b>：お好きな画質。<span class="hint-text">探すだけなら低画質のほうが早く書き出せます。</span></li>
+</ol>
+
+<h3>スマートフォンのアプリ（Android）</h3>
+<div class="card">
+  <p style="margin:4px 0">右上の三本線 ＞ <b>Metaアカウント</b> を開き、あとはパソコンと同じ手順で選びます（上の3番目から）。</p>
+</div>
+<p class="hint-text">iPhoneの手順は、確認できていないのでここには書いていません。</p>
+
+<div class="card note">
+  <b>書き出しには時間がかかります。</b>完了すると通知（メール）が届くので、届いたらZIPをダウンロードしてください。ZIPは<b>解凍せずに</b>そのまま使えます。
+</div>
+
+<h2>2. ツールで読み込む</h2>
+<ol>
+  <li>ツールのページで <b>「ZIPファイルを選ぶ」</b> を押し、ダウンロードしたZIPを選びます。ZIPが複数に分かれていたら、まとめて選べます。</li>
+  <li>解凍したフォルダを使いたいときは、<b>「解凍したフォルダを選ぶ」</b>から選べます。</li>
+  <li>「◯◯件の投稿が見つかりました」と出たら、準備完了です。</li>
+  <li>まず試したいときは <b>「サンプルで試す」</b>。架空の投稿が表示されます（自分のデータは使いません）。</li>
+</ol>
+<p class="hint-text">ブラウザが「アップロードしますか？」と表示することがありますが、ブラウザの定型文です。どこにも送信されません（「6. 安全性」を参照）。</p>
+
+<h2 id="open">3. 見つけた投稿を、アプリで開く</h2>
+<p>ツールで投稿の日付が分かったら、Instagramの「アクティビティ」で、同じ日付の投稿を表示します。ここから、見るだけでなく、削除などもできます。</p>
+
+<h3>パソコン（おすすめ）</h3>
+<ol class="card">
+  <li>左の三本線（その他）＞ <b>アクティビティ</b> ＞ <b>写真・動画</b></li>
+  <li><b>並び替えとフィルター</b></li>
+  <li><b>開始日</b>と<b>終了日</b>を、該当の日時の付近に指定</li>
+</ol>
+
+<h3>スマートフォンアプリ（Android）</h3>
+<ol class="card">
+  <li>右上の三本線 ＞ <b>アクティビティ</b> ＞ <b>投稿</b></li>
+  <li>上部中央の <b>「すべての期間」</b> ＞ <b>期間</b></li>
+  <li><b>開始日</b>と<b>終了日</b>を、該当の日時の付近に指定</li>
+</ol>
+<p class="hint-text">アプリの日付は、ツールの表示と1日ずれることがあります（次の「4. 日付と時間帯のずれ」を参照）。<b>前後に数日の幅をもたせて</b>指定すると、確実に見つかります。</p>
+
+<h2>4. 日付と時間帯のずれについて</h2>
+<div class="card note">
+  <p style="margin:4px 0">このツールには、日時が<b>お使いのパソコン・スマホの時間帯</b>（日本なら日本時間）で表示されます。ところが、Instagramアプリの「アクティビティ＞投稿」の期間指定は、<b>米国西海岸の時間</b>で動いているようです。そのため、アプリで日付を指定しても、日本時間の日付と<b>1日ずれる</b>ことがあります。</p>
+</div>
+<ul>
+  <li>ずれて見えるのは、<b>日本時間の午前〜夕方</b>の投稿です。夕方から夜（冬は17時以降、夏は16時以降）の投稿は、同じ日付になります。</li>
+  <li>ずれる場合、ツールに「<b>※アプリのアクティビティ＞投稿で期間指定するなら ◯◯</b>」と、アプリで指定する日付が出ます。</li>
+  <li>日時を厳密に合わせなくても、<b>前後に数日の幅をもたせて指定すれば、確実に見つかります。</b></li>
+</ul>
+<table>
+  <tr><th>時期</th><th>日本との時差（西海岸）</th></tr>
+  <tr><td>冬（11月ごろ〜3月ごろ）</td><td>17時間</td></tr>
+  <tr><td>夏（3月ごろ〜11月ごろ・夏時間）</td><td>16時間</td></tr>
+</table>
+<p class="hint-text">この「西海岸時間」は、私が実際に確認できた範囲（冬と夏の投稿1件ずつ）からの推測です。確認した範囲では、アプリの表示と一致しました。</p>
+
+<h2>5. 元の投稿のURLに飛べない理由</h2>
+<p>書き出しデータには、<b>自分の投稿のURL（<code>instagram.com/p/…</code>）が入っていません</b>。「全部盛り」のJSON、メディアだけのJSON、HTML形式で試しましたが、どれも同じでした。URLが入っていたのは、他の人の投稿を見た・いいねした・保存した記録だけです。</p>
+<p>そのため、このツールで元の投稿へ直接飛ぶことはできません。<b>日付と本文で見つけて、アプリで同じ日付の投稿を開く</b>使い方になります。</p>
+
+<h2>6. 安全性（データはどこにも送られません）</h2>
+<div class="card safe">
+  <ul style="margin:4px 0">
+    <li>ページの中にある通信を止める設定（<code>Content-Security-Policy</code>）で、外部への送信をブラウザが拒否します。</li>
+    <li>外部のサーバーやライブラリは使っていません。ZIPの解凍もブラウザの標準機能です。画面の文字（フォント）だけは、このサイトの共通のスタイルシートが、Google Fontsから読み込みます。あなたの投稿のデータは、フォントの読み込みとは無関係で、送信されません。</li>
+    <li>ログイン、パスワード、アカウント連携は一切ありません。</li>
+    <li><b>位置情報（緯度・経度）、端末情報は読み込みません・表示しません。</b>読むのは、投稿の画像・本文・日時だけです。</li>
+    <li>DM・広告・個人情報などのファイルは、読みません。</li>
+  </ul>
+</div>
+<p><b>ネットを切って試せます。</b>ページを開いたあとで、Wi-Fiを切るか機内モードにしても、そのまま動きます。</p>
+
+<h2>7. 動作環境と制限</h2>
+<ul>
+  <li>最近のChrome・Edge・Safari・Firefoxで動く想定です。ZIPをそのまま読むには、ブラウザの <code>DecompressionStream</code> が必要です（Safari 16.4以降など）。古いブラウザでは、ZIPを解凍してフォルダを選んでください。</li>
+  <li>パソコンでの作業をおすすめします。スマホでは、<b>ZIPを選ぶ方法</b>が現実的です（フォルダ選択はスマホのブラウザでほとんど使えません）。</li>
+  <li>写真が多くてZIPが大きいと、スマホでは重くなるかもしれません。書き出しのときに低画質を選ぶと軽くなります。</li>
+  <li><b>「投稿」にのみ対応しています。</b>リールなど、それ以外は読みません。</li>
+  <li>複数の書き出しを一度に選んだときは、最初の1つだけを使います。</li>
+</ul>
+
+<h2>8. 関連ツール</h2>
+<div class="card">
+  <b><a href="/post-time/">SNS投稿日時ビューア</a></b><br>
+  X・Instagram・TikTok・Threads・Bluesky・Misskey・Mastodonの<b>投稿URL</b>から、投稿の日時を秒まで調べられます。URLが分かっている投稿の日時を知りたいときに使えます。
+</div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+</body>
+</html>

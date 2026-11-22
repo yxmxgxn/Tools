@@ -1,0 +1,191 @@
+<!Doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'unsafe-inline'; connect-src 'self'; form-action 'none'; base-uri 'none'">
+
+<title>投稿URLからアカウントを調べる | Hello! Tools</title>
+<meta name="description" content="Instagram・X・Threads・TikTokの投稿のURL（またはID）から、今のアカウント名と、今日現在のURL、投稿日時を調べるツールです。">
+<meta property="og:title" content="投稿URLからアカウントを調べる">
+<meta property="og:description" content="Instagram・X・Threads・TikTokの投稿のURL（またはID）から、今のアカウント名と今日現在のURLを調べます。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/sns-account-lookup/">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/sns-account-lookup.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="投稿URLからアカウントを調べる">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/sns-account-lookup.png">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/sns-account-lookup/">
+<link rel="alternate" hreflang="ja" href="https://tools.yxmxgxn.workers.dev/sns-account-lookup/">
+<link rel="alternate" hreflang="en" href="https://tools.yxmxgxn.workers.dev/en/sns-account-lookup/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<style>
+  #sa-url { min-height: 7.5em; margin: 0.75rem 0; }
+  #sa-list { list-style: none; margin: 0.75rem 0; padding: 0; }
+  .sa-row { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 0.9rem; margin: 0 0 10px; }
+  .sa-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sa-svc { font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--code-bg); border: 1px solid var(--line); }
+  .sa-user { font-size: 1.25rem; font-weight: 700; }
+  .sa-line { margin-top: 0.3rem; font-size: 14px; word-break: break-all; }
+  .sa-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.5rem; }
+  .sa-actions button { padding: 3px 10px; font-size: 13px; }
+  .sa-notice { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 4px; padding: 0.6rem 0.9rem; margin: 1rem 0; font-size: 14px; }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="lang" href="/en/sns-account-lookup/" hreflang="en" lang="en">English</a><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <h1>投稿URLからアカウントを調べる</h1>
+  Instagram・X・Threads・TikTokの投稿のURL（またはID）を入れると、<strong>今のアカウント名</strong>と、<strong>今日現在のURL</strong>、投稿日時が分かります。1行に1つ、5件まで調べられます。
+
+  <div class="sa-notice"><strong>このツールは通信します。</strong>入力したURLやIDは、このサイトのサーバーを経由して、Instagram・X・Threads・TikTokに問い合わせます。入力内容は保存しません。くわしくは<a href="about.html">使い方・仕組み</a>を見てください。</div>
+
+  <textarea id="sa-url" placeholder="https://www.instagram.com/p/XXXXXXXXXXX/&#10;https://x.com/i/status/0000000000000000000&#10;https://www.threads.com/@i/post/XXXXXXXXXXX&#10;https://www.tiktok.com/@i/video/0000000000000000000" autocomplete="off" spellcheck="false"></textarea>
+  <div class="option-row"><button type="button" class="button-primary" id="sa-go">調べる</button><span class="hint-text" id="sa-st"></span></div>
+
+  <ul id="sa-list"></ul>
+
+  <p class="related"><a href="about.html">使い方・仕組み</a>　／　<a href="/post-time/">SNS投稿日時ビューア</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NAMES = { instagram: 'Instagram', x: 'X', threads: 'Threads', tiktok: 'TikTok' };
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function copy(t, btn, label) {
+    try { navigator.clipboard.writeText(t); } catch (e) {}
+    btn.textContent = 'コピーしました';
+    setTimeout(function () { btn.textContent = label; }, 1500);
+  }
+  function errRow(msg, input) {
+    var li = el('li', 'sa-row');
+    li.appendChild(el('div', 'error-text', msg));
+    if (input) li.appendChild(el('div', 'hint-text', input));
+    return li;
+  }
+  function render(r) {
+    if (r.error && !r.username) return errRow(r.error, r.input);
+    var li = el('li', 'sa-row');
+    var head = el('div', 'sa-head');
+    if (r.service) head.appendChild(el('span', 'sa-svc', NAMES[r.service] || r.service));
+    head.appendChild(el('span', 'sa-user', '@' + r.username));
+    li.appendChild(head);
+    if (r.time) li.appendChild(el('div', 'sa-line', '投稿日時（日本時間）：' + r.time));
+    var line = el('div', 'sa-line');
+    var a = el('a', null, r.url);
+    a.href = r.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    line.appendChild(a);
+    li.appendChild(line);
+    var act = el('div', 'sa-actions');
+    var b1 = el('button', null, 'アカウント名をコピー'); b1.type = 'button';
+    b1.addEventListener('click', function () { copy(r.username, b1, 'アカウント名をコピー'); });
+    var b2 = el('button', null, 'URLをコピー'); b2.type = 'button';
+    b2.addEventListener('click', function () { copy(r.url, b2, 'URLをコピー'); });
+    act.appendChild(b1); act.appendChild(b2);
+    li.appendChild(act);
+    return li;
+  }
+  function send(lines) {
+    return fetch('api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'u=' + encodeURIComponent(lines.join('\n')),
+      credentials: 'same-origin'
+    }).then(function (r) {
+      return r.json().catch(function () { return { error: 'サーバーの応答を読めませんでした' }; });
+    });
+  }
+  // 桁数・文字数の事前チェック。問い合わせる前に、画面側で理由を伝える（通信も回数も使わない）。
+  // サーバー側（worker/index.js）にも同じ判定がある。
+  function lenMsg(name, noun, n, min, max, unit) {
+    var word = unit === '桁' ? '桁数' : '文字数';
+    var rule = min === max ? min + unit : min + '〜' + max + unit;
+    if (n < min) return name + 'の' + noun + 'の' + word + 'が少ないです（' + rule + '。いま' + n + unit + '）';
+    if (n > max) return name + 'の' + noun + 'の' + word + 'が多いです（' + rule + '。いま' + n + unit + '）';
+    return null;
+  }
+  function precheck(s) {
+    var m = s.match(/^(?:https?:\/\/)?([^\/\s?#]+)(\/[^\s?#]*)?/i), x;
+    if (m && m[1].indexOf('.') >= 0) {
+      if (/[@: ]/.test(m[1])) return null;
+      var host = m[1].toLowerCase().replace(/^(www|m|mobile)\./, ''), path = m[2] || '';
+      if (host === 'instagram.com' && (x = path.match(/\/(?:p|reels?|tv)\/([A-Za-z0-9_-]+)(?:\/|$)/))) return lenMsg('Instagram', 'コード', x[1].length, 10, 11, '文字');
+      if ((host === 'x.com' || host === 'twitter.com') && (x = path.match(/\/status(?:es)?\/(\d+)(?:\/|$)/))) return lenMsg('X', '番号', x[1].length, 15, 19, '桁');
+      if ((host === 'threads.com' || host === 'threads.net') && (x = path.match(/\/post\/([A-Za-z0-9_-]+)(?:\/|$)/))) return lenMsg('Threads', 'コード', x[1].length, 10, 11, '文字');
+      if (host === 'tiktok.com' && (x = path.match(/\/(?:video|photo)\/(\d+)(?:\/|$)/))) return lenMsg('TikTok', '番号', x[1].length, 19, 19, '桁');
+      return null;
+    }
+    if (/^\d+$/.test(s)) {
+      if (s.length < 15) return '番号の桁数が少ないです（XとTikTokの番号は15〜19桁、TikTokは19桁です。いま' + s.length + '桁）';
+      if (s.length > 19) return '番号の桁数が多いです（XとTikTokの番号は19桁までです。いま' + s.length + '桁）';
+      return null;
+    }
+    if (/^[A-Za-z0-9_-]+$/.test(s)) return lenMsg('InstagramとThreads', 'コード', s.length, 10, 11, '文字');
+    return null;
+  }
+
+  $('sa-go').addEventListener('click', function () {
+    var lines = $('sa-url').value.split(/\s+/).filter(Boolean);
+    var list = $('sa-list');
+    list.textContent = '';
+    if (!lines.length) { $('sa-st').textContent = 'URLを入れてください'; return; }
+    var btn = $('sa-go');
+    btn.disabled = true;
+    $('sa-st').textContent = '調べています…';
+
+    // 事前チェックで弾いたものは、その場でエラーにして、残りだけを問い合わせる
+    var nodes = new Array(lines.length);
+    var sendIdx = [];
+    lines.forEach(function (l, i) {
+      var e = precheck(l);
+      if (e) nodes[i] = errRow(e, l); else sendIdx.push(i);
+    });
+    var chunks = [];
+    for (var i = 0; i < sendIdx.length; i += 5) chunks.push(sendIdx.slice(i, i + 5));
+
+    var p = Promise.resolve();
+    chunks.forEach(function (idxs) {
+      p = p.then(function () {
+        return send(idxs.map(function (k) { return lines[k]; }));
+      }).then(function (d) {
+        if (d.error) { idxs.forEach(function (k) { nodes[k] = errRow(d.error, lines[k]); }); return; }
+        idxs.forEach(function (k, j) { nodes[k] = d.results && d.results[j] ? render(d.results[j]) : errRow('結果を読めませんでした', lines[k]); });
+      }).catch(function () {
+        idxs.forEach(function (k) { nodes[k] = errRow('通信に失敗しました', lines[k]); });
+      });
+    });
+    p.then(function () {
+      nodes.forEach(function (n) { if (n) list.appendChild(n); });
+      btn.disabled = false;
+      $('sa-st').textContent = '';
+    });
+  });
+})();
+</script>
+</body>
+</html>

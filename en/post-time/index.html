@@ -1,0 +1,549 @@
+<!Doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>SNS Post Time Viewer | Hello! Tools</title>
+<meta name="description" content="Paste a post URL from X, Instagram, TikTok, Threads, Bluesky, Misskey or Mastodon to see the exact post time (timestamp) and account name. The time is worked out from the ID in the URL, so you can see it to the second without opening the post.">
+<meta property="og:title" content="SNS Post Time Viewer">
+<meta property="og:description" content="Shows the exact post time (timestamp), to the second, and the account name from a post URL on X, Instagram, TikTok, Threads, Bluesky, Misskey or Mastodon.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hello! Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:url" content="https://tools.yxmxgxn.workers.dev/en/post-time/">
+<meta property="og:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/post-time.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SNS Post Time Viewer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tools.yxmxgxn.workers.dev/ogp/en/post-time.png">
+<meta name="twitter:creator" content="@yxmxgxn">
+<link rel="canonical" href="https://tools.yxmxgxn.workers.dev/en/post-time/">
+<link rel="alternate" hreflang="ja" href="https://tools.yxmxgxn.workers.dev/post-time/">
+<link rel="alternate" hreflang="en" href="https://tools.yxmxgxn.workers.dev/en/post-time/">
+<link rel="icon" href="/assets/favicon/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/common.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "SNS Post Time Viewer",
+  "inLanguage": "en",
+  "description": "Paste a post URL from X, Instagram, TikTok, Threads, Bluesky, Misskey or Mastodon to see the exact post time (timestamp) and account name. The time is worked out from the ID in the URL, so you can see it to the second without opening the post.",
+  "applicationCategory": "UtilityApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+}
+</script>
+
+<style>
+  #pt-url { min-height: 5.5em; margin: 0.75rem 0; }
+  #pt-list { list-style: none; margin: 0.5rem 0; padding: 0; }
+  .pt-row {
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 0.7rem 0.9rem; margin: 0 0 10px;
+  }
+  .pt-head {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    font-size: 14px;
+  }
+  .pt-svc {
+    font-size: 12px; padding: 1px 8px; border-radius: 10px;
+    background: var(--code-bg); border: 1px solid var(--line);
+  }
+  .pt-user-none { color: var(--muted); }
+  .pt-time-line {
+    display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+    margin-top: 0.3rem;
+  }
+  .pt-time { font-size: 1.25rem; font-weight: 700; }
+  .pt-ago { color: var(--muted); font-size: 13px; }
+  .pt-copy { padding: 3px 10px; font-size: 13px; }
+  .pt-url { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 0.3rem; }
+  .pt-row .hint-text { margin-top: 0.3rem; }
+  #pt-format { margin-top: 0; }
+  #pt-format label.pt-off { color: var(--muted); }
+  #pt-preset { margin-left: 6px; }
+  #pt-custom-box { margin: 0 0 0.75rem; }
+  #pt-custom { width: 100%; max-width: 320px; }
+  .pt-legend { font-size: 12px; color: var(--muted); margin-top: 0.3rem; }
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap"><a class="lang" href="/post-time/" hreflang="ja" lang="ja">日本語</a><a class="brand" href="/">Hello! Tools</a></div>
+</header>
+
+<main>
+  <h1>SNS Post Time Viewer</h1>
+  Paste a post URL from X, Instagram, TikTok, Threads, Bluesky, Misskey or Mastodon to see the post time (timestamp, in Japan Standard Time) and the account name. Instead of a rough "2 days ago" or "1 year ago", you get the exact time to the second.<br>
+  The time is worked out from the ID in the URL, so you don't need to open the post. Paste several at once, one per line.
+
+  <textarea id="pt-url" placeholder="https://x.com/username/status/0000000000&#10;https://www.instagram.com/p/XXXXXXXXXXX/&#10;https://www.tiktok.com/@username/video/0000000000" autocomplete="off" spellcheck="false"></textarea>
+
+  <div id="pt-format" class="option-row">
+    <label>Format
+      <select id="pt-preset">
+        <option value="slash">2026/09/22 13:51:14</option>
+        <option value="hyphen">2026-09-22 13:51:14</option>
+        <option value="us">09/22/2026 13:51:14</option>
+        <option value="custom">Custom</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="pt-dateonly"> Date only</label>
+    <label><input type="checkbox" id="pt-weekday"> Day of week</label>
+  </div>
+  <div id="pt-custom-box" hidden>
+    <input type="text" id="pt-custom" value="YYYY/MM/DD HH:mm:ss" autocomplete="off" spellcheck="false">
+    <div class="pt-legend">
+      <code>YYYY</code> year (4 digits) · <code>YY</code> year (2 digits) · <code>MM</code> / <code>M</code> month · <code>DD</code> / <code>D</code> day · <code>HH</code> / <code>H</code> hour · <code>mm</code> minute · <code>ss</code> second · <code>ddd</code> day of week (Tue)<br>
+      Two-letter tokens are zero-padded (09); one-letter tokens are not (9). Text inside <code>[ ]</code> is printed as is.
+    </div>
+  </div>
+
+  <ul id="pt-list"></ul>
+
+  <h2>Bookmarklet</h2>
+  Run it while you have a post open on a supported service to show the exact post time (to the second) and the account name on the spot. It's handy when the site only shows a rough "2 days ago", "3-4" or "1 year ago". Use "Copy" to copy the time.<br>
+  It doesn't open this tool's page, and the calculation happens right there, so nothing is sent anywhere. The display format is fixed at <code>yyyy/mm/dd hh:mm:ss</code> (JST).<br>
+  On a PC, drag the button below to your bookmarks bar. On a phone, tap "Copy code", bookmark any page, then edit the bookmark and paste the code into the URL field.
+  <div class="bookmarklet">
+    <a class="button-primary" href="javascript:(function(){var u=location.href,m,ms=0,a='',i,n,s,L,B='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';function g(c){var x=0n;for(i=0;i<c.length;i++)x=x*64n+BigInt(B.indexOf(c[i]));return Number((x>>23n)+1314220021721n)}if(m=u.match(/(?:x|twitter)\.com\/(\w+)\/status(?:es)?\/(\d{15,19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number((BigInt(m[2])>>22n)+1288834974657n)}else if(m=u.match(/instagram\.com\/stories\/([\w.]+)\/(\d{19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number((BigInt(m[2])>>23n)+1314220021721n)}else if(m=u.match(/instagram\.com\/(?:([\w.]+)\/)?(?:p|reels?|tv)\/([\w-]{10,11})(?:[\/?\x23]|$)/)){a=m[1]||'';ms=g(m[2])}else if(m=u.match(/tiktok\.com\/@([\w.]+)\/(?:video|photo)\/(\d{19})(?:[\/?\x23]|$)/)){a=m[1];ms=Number(BigInt(m[2])>>32n)*1000}else if(m=u.match(/threads\.(?:net|com)\/@([\w.]+)\/post\/([\w-]{11})(?:[\/?\x23]|$)/)){a=m[1];ms=g(m[2])}else if(m=u.match(/bsky\.app\/profile\/([^\/]+)\/post\/([a-z2-7]{13})(?:[\/?\x23]|$)/)){a=m[1];n=0n;for(i=0;i<13;i++)n=n*32n+BigInt('234567abcdefghijklmnopqrstuvwxyz'.indexOf(m[2][i]));ms=Number((n>>10n)/1000n)}else if(m=u.match(/\/notes\/([0-9a-z]{10}|[0-9a-z]{16}|[0-9A-HJKMNP-TV-Z]{26}|[0-9a-g][0-9a-f]{23})(?:[\/?\x23]|$)/)){s=m[1];L=s.length;if(L<17)ms=parseInt(s.slice(0,8),36)+946684800000;else if(L==26)for(i=0;i<10;i++)ms=ms*32+'0123456789ABCDEFGHJKMNPQRSTVWXYZ'.indexOf(s[i]);else{ms=parseInt(s.slice(1,12),16);if(ms<1136073600000||ms>Date.now()+864e5)ms=parseInt(s.slice(0,8),16)*1000}}else if(m=u.match(/\/@(\w+(?:@[^\/]+)?)\/(\d{17,18})(?:[\/?\x23]|$)/)){a=m[1];ms=Number(BigInt(m[2])>>16n)}if(!(ms>=1136073600000)||ms>Date.now()+864e5){alert('Run this on a post page of a supported social network');return}var d=new Date(ms+324e5),p=function(x){return('0'+x).slice(-2)},D=d.getUTCFullYear()+'/'+p(d.getUTCMonth()+1)+'/'+p(d.getUTCDate())+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds()),o=document.getElementById('pt-bml-box');if(o)o.remove();function E(t,x,c){var e=document.createElement(t);e.textContent=x;e.style.cssText=c.replace(/;/g,'!important;')+'!important';return e}var K='all:revert;margin:8px 4px 0;font-size:14px;cursor:pointer',w=E('div','','all:revert;position:fixed;z-index:2147483647;top:12px;left:0;right:0;margin:0 auto;width:max-content;max-width:90vw;box-sizing:border-box;background:rgb(255,255,255);color:rgb(0,0,0);border:1px solid rgb(153,153,153);padding:12px 16px;font:16px/1.5 sans-serif;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3)'),b=E('button','Copy',K),c=E('button','Close',K);w.id='pt-bml-box';w.appendChild(E('div',a==''||a=='i'?'Post time (JST)':'@'+a+'\x27s post time (JST)','all:revert;font-size:14px'));var v=E('div',D,'all:revert;font-size:20px;user-select:all');w.appendChild(v);b.onclick=function(){function F(){var r=document.createRange(),S=getSelection();r.selectNodeContents(v);S.removeAllRanges();S.addRange(r);b.textContent=document.execCommand('copy')?'Copied':'Selected: press Ctrl+C to copy'}if(navigator.clipboard)navigator.clipboard.writeText(D).then(function(){b.textContent='Copied'},F);else F()};c.onclick=function(){w.remove()};w.appendChild(b);w.appendChild(c);document.body.appendChild(w)})();">Show post time</a>
+    <button type="button" class="pt-bml-copy">Copy code</button>
+  </div>
+
+  <h2>Supported URLs</h2>
+  <ul>
+    <li><strong>X</strong>: <code>x.com/username/status/number</code> (twitter.com works too)</li>
+    <li><strong>Instagram</strong>: <code>instagram.com/p/code</code>, <code>/reel/code</code>, <code>/reels/code</code>, <code>/stories/username/number</code> (the link in the result opens in the form <code>/i/p/code</code>)</li>
+    <li><strong>TikTok</strong>: <code>tiktok.com/@username/video/number</code> (<code>/photo/</code> works too)</li>
+    <li><strong>Threads</strong>: <code>threads.com/@username/post/code</code> (threads.net works too)</li>
+    <li><strong>Bluesky</strong>: <code>bsky.app/profile/handle/post/code</code></li>
+    <li><strong>Misskey</strong>: <code>server/notes/ID</code> (servers other than misskey.io work too)</li>
+    <li><strong>Mastodon</strong>: <code>server/@username/number</code> (servers other than mstdn.jp work too)</li>
+  </ul>
+  Misskey URLs don't contain the account name, so only the time is shown.<br>
+  Instagram URLs usually don't contain the account name either. If you open the link in the result (<code>/i/p/code</code>), the URL is rewritten to the form <code>instagram.com/username/p/code</code>; paste that back in to also see the account name. Copying the link on the date of the post gives the same form.<br>
+  The link opens in the <code>/p/</code> form because <code>/reel/</code> and <code>/reels/</code> redirect to the Reels continuous-play screen, and for photo posts that can swap in a different reel.<br>
+  For TikTok short URLs (<code>vm.tiktok.com/…</code>) and X's <code>t.co/…</code> links, open them in your browser first and paste the long URL that appears.
+
+  <h2>How it works</h2>
+  On every one of these services, the post time is embedded in the upper bits of the post ID. This tool just extracts that part of the ID and turns it back into a time. It doesn't connect to anything.
+  <ul>
+    <li><strong>X</strong>: shift the ID right by 22 bits to get the milliseconds elapsed since November 4, 2010.</li>
+    <li><strong>Instagram</strong>: the code in the URL is the ID written in base 64 (<code>A-Z a-z 0-9 - _</code>). Convert it back to a number and shift it right by 23 bits to get the milliseconds elapsed since August 24, 2011.</li>
+    <li><strong>TikTok</strong>: shift the ID right by 32 bits to get Unix time (seconds) directly.</li>
+    <li><strong>Threads</strong>: the same mechanism as Instagram.</li>
+    <li><strong>Bluesky</strong>: the last 13 characters of the URL are base 32 (<code>2-7 a-z</code>). Convert them back to a number and shift it right by 10 bits to get Unix time in microseconds.</li>
+    <li><strong>Misskey</strong>: the ID format depends on the server's settings. In the format used by most servers (such as misskey.io), reading the first 8 characters as base 36 gives the milliseconds elapsed since January 1, 2000. Other formats (meid, ulid, objectid) are told apart by length and character set and calculated as well.</li>
+    <li><strong>Mastodon</strong>: shift the ID right by 16 bits to get Unix time (milliseconds). Posts from before 2017 use sequential IDs and can't be calculated.</li>
+  </ul>
+  The time shown is "the moment the ID was issued". For scheduled posts or posts made from a draft, it can differ slightly from the time shown on the post.<br>
+  The account name is taken as written in the URL. On X and Instagram, the same post opens even if the username part is different (Instagram rewrites the address to the correct author after it opens), so with a URL from before a rename, or a URL edited by hand, the name may not match the real author. To be sure, open the post from the link in the result and check.
+
+  <h2>Notes</h2>
+  This tool calculates from the ID mechanisms each service uses <strong>right now</strong>. These mechanisms aren't officially published, and a service can change them without notice.<br>
+  The times shown are a guide. Accuracy isn't guaranteed, so if you need a definitive time, check it against the post itself.<br>
+  URLs with extra characters in the ID, or the wrong number of characters, are reported as errors. However, a single wrong character that keeps the length the same, or a truncated ID whose length happens to be valid for an older post (such as 10 characters on Instagram), can't be detected and will be calculated as a different time.
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">&copy; <a href="https://x.com/yxmxgxn" target="_blank" rel="noopener">@yxmxgxn</a></div>
+</footer>
+
+<script>
+(function () {
+  var B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  var WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  // Instagram shortcode (base 64) -> media ID
+  function igCodeToId(code) {
+    var n = 0n;
+    for (var i = 0; i < code.length; i++) {
+      var v = B64.indexOf(code[i]);
+      if (v < 0) return null;
+      n = n * 64n + BigInt(v);
+    }
+    return n;
+  }
+  function igIdToMs(id) { return Number((id >> 23n) + 1314220021721n); }
+
+  // ID validation. No case folding or other leniency: only the expected ASCII characters and lengths pass.
+  // This keeps a URL with an extra, missing or mixed-up character from producing a plausible-looking wrong time
+  function checkId(id, ok, desc, lengths, lengthText) {
+    var bad = [];
+    for (var c of id) if (!ok.test(c) && bad.indexOf(c) < 0) bad.push(c);
+    if (bad.length) {
+      return { err: "The ID contains unexpected characters (“" + bad.join("” “") + "”). " + desc + "." };
+    }
+    if (lengths && lengths.indexOf(id.length) < 0) return lengthErr(id, lengthText);
+    return null;
+  }
+
+  function lengthErr(id, expected) {
+    return { err: "The ID is the wrong length (it has " + id.length + " characters; " + expected + "). Check that the URL isn't cut off and has no extra characters." };
+  }
+
+  var DIGIT = /[0-9]/;
+  var IG_CHAR = /[A-Za-z0-9_-]/;
+
+  // Tried from the top. parse returns {user, ms} or {err}.
+  // The ID part is taken whole, up to the next delimiter (/ ? #), so it never gets silently cut before an invalid character
+  var SERVICES = [
+    {
+      name: "X",
+      re: /(?:x|twitter)\.com\/([A-Za-z0-9_]+)\/status(?:es)?\/([^\/?#\s]+)/,
+      profile: function (u) { return "https://x.com/" + u; },
+      parse: function (m) {
+        var e = checkId(m[2], DIGIT, "X post IDs are ASCII digits only",
+          [15, 16, 17, 18, 19], "X IDs are 19 digits, or 18 for posts up to around 2018");
+        if (e) return e;
+        var id = BigInt(m[2]);
+        if (id < 300000000000000n) return { err: "Posts from before November 2010 don't have a time in their ID, so it can't be calculated." };
+        return {
+          user: m[1].toLowerCase() === "i" ? null : m[1],
+          ms: Number((id >> 22n) + 1288834974657n),
+          hint: m[1].toLowerCase() === "i" ? "This URL format doesn't include a username." : ""
+        };
+      }
+    },
+    {
+      name: "Instagram",
+      re: /(?:instagram\.com|instagr\.am)\/stories\/([A-Za-z0-9._]+)\/([^\/?#\s]+)/,
+      profile: function (u) { return "https://www.instagram.com/" + u + "/"; },
+      parse: function (m) {
+        var e = checkId(m[2], DIGIT, "Story IDs are ASCII digits only", [19], "Story IDs are 19 digits");
+        if (e) return e;
+        return { user: m[1], ms: igIdToMs(BigInt(m[2])) };
+      }
+    },
+    {
+      name: "Instagram",
+      re: /(?:instagram\.com|instagr\.am)\/(?:([A-Za-z0-9._]+)\/)?(p|reels?|tv)\/([^\/?#\s]+)/,
+      profile: function (u) { return "https://www.instagram.com/" + u + "/"; },
+      parse: function (m) {
+        var code = m[3];
+        var e = checkId(code, IG_CHAR, "Instagram codes are ASCII letters, digits, - and _ only",
+          [11, 10], "normally 11 characters, or 10 for posts up to around 2015. The long URLs of private accounts aren't supported");
+        if (e) return e;
+        var hints = [];
+        // 10 characters is a valid length for an old post, so it can't be an error, but a recent post missing one character also gives 10
+        if (code.length === 10) hints.push("A 10-character code belongs to a post from around 2015 or earlier. If this is a recent post, a character is missing. ");
+        // /reels/ is the URL of the Reels continuous-play screen. Opening a photo post swaps in another reel, and the code in the URL changes too
+        if (m[2] === "reels") hints.push("A /reels/ URL belongs to the Reels continuous-play screen. It may have changed to the URL of a different post through redirects or scrolling, so open the link and check it's the post you want. ");
+        // The i in /i/p/code is a placeholder in place of a name, like /i/status/ on X, so it isn't treated as an account name
+        var user = m[1] && m[1] !== "i" ? m[1] : null;
+        if (!user) hints.push("Opening the link rewrites the URL to include the author's name (instagram.com/username/p/…). Paste that back in to also see the account name.");
+        return {
+          user: user,
+          ms: igIdToMs(igCodeToId(code)),
+          hint: hints.join(""),
+          // /reel/ and /reels/ redirect or swap content, so use the /p/ form that opens the post itself.
+          // With i in the name slot, it is rewritten to the URL with the correct author's name once it opens
+          postUrl: "https://www.instagram.com/i/p/" + code + "/"
+        };
+      }
+    },
+    {
+      name: "TikTok",
+      re: /tiktok\.com\/@([A-Za-z0-9._]+)\/(?:video|photo)\/([^\/?#\s]+)/,
+      profile: function (u) { return "https://www.tiktok.com/@" + u; },
+      parse: function (m) {
+        var e = checkId(m[2], DIGIT, "TikTok IDs are ASCII digits only", [19], "TikTok IDs are 19 digits");
+        if (e) return e;
+        return { user: m[1], ms: Number(BigInt(m[2]) >> 32n) * 1000 };
+      }
+    },
+    {
+      name: "Threads",
+      re: /threads\.(?:net|com)\/@([A-Za-z0-9._]+)\/post\/([^\/?#\s]+)/,
+      profile: function (u) { return "https://www.threads.com/@" + u; },
+      parse: function (m) {
+        var e = checkId(m[2], IG_CHAR, "Threads codes are ASCII letters, digits, - and _ only", [11], "Threads codes are 11 characters");
+        if (e) return e;
+        return { user: m[1], ms: igIdToMs(igCodeToId(m[2])) };
+      }
+    },
+    {
+      name: "Bluesky",
+      re: /bsky\.app\/profile\/([^\/\s?#]+)\/post\/([^\/?#\s]+)/,
+      profile: function (u) { return "https://bsky.app/profile/" + u; },
+      parse: function (m) {
+        var e = checkId(m[2], /[a-z2-7]/, "Bluesky post IDs use only lowercase a–z and the digits 2–7", [13], "Bluesky IDs are 13 characters");
+        if (e) return e;
+        // TID: 13 characters of base32-sortable. Shift right by 10 bits to get Unix microseconds
+        var n = 0n;
+        for (var i = 0; i < 13; i++) n = n * 32n + BigInt(B32.indexOf(m[2][i]));
+        return { user: m[1], ms: Number((n >> 10n) / 1000n) };
+      }
+    },
+    {
+      name: "Misskey",
+      re: /https?:\/\/([^\/\s]+)\/notes\/([^\/?#\s]+)/,
+      profile: null,
+      parse: function (m) {
+        var r = misskeyIdToMs(m[2]);
+        if (r.err) return r;
+        return { user: null, ms: r.ms, hint: "Misskey URLs don't contain the account name (server: " + m[1] + ")." };
+      }
+    },
+    {
+      // Mastodon-family. The domain differs per server, so match on the /@username/digits... shape
+      // (requiring it to start with a digit keeps it from catching things like YouTube's /@channel/videos)
+      name: "Mastodon",
+      re: /https?:\/\/([^\/\s]+)\/(?:@([A-Za-z0-9_]+(?:@[^\/\s]+)?)|users\/([A-Za-z0-9_]+)\/statuses)\/(\d[^\/?#\s]*)/,
+      profile: null,
+      parse: function (m) {
+        var e = checkId(m[4], DIGIT, "Mastodon post IDs are ASCII digits only",
+          [18, 17], "Mastodon IDs are 18 digits, or 17 for posts up to around 2018. Posts from before 2017 can't be calculated");
+        if (e) return e;
+        var user = m[2] || m[3];
+        return {
+          user: user,
+          // Users on other servers (name@domain) link straight to their home server.
+          // Going through the server being viewed adds a redirect and a "make sure it's safe" confirmation screen
+          link: user.indexOf("@") >= 0
+            ? "https://" + user.split("@")[1] + "/@" + user.split("@")[0]
+            : "https://" + m[1] + "/@" + user,
+          ms: Number(BigInt(m[4]) >> 16n)
+        };
+      }
+    }
+  ];
+
+  var B32 = "234567abcdefghijklmnopqrstuvwxyz";
+
+  // Misskey servers use different ID formats depending on their settings. The format is chosen by length, and only that format's characters pass.
+  // In 2026-09 each format was checked against createdAt on a server's public timeline, matching to the millisecond
+  // (aid: misskey.dev / aidx: misskey.io / ulid: nijimiss.moe / 24 characters: misskey.m544.net)
+  function misskeyIdToMs(id) {
+    var e;
+    if (id.length === 10 || id.length === 16) {
+      // aid / aidx: the first 8 characters are milliseconds since 2000-01-01 (base 36)
+      e = checkId(id, /[0-9a-z]/, "Note IDs in this format are lowercase ASCII letters and digits only");
+      return e || { ms: parseInt(id.slice(0, 8), 36) + 946684800000 };
+    }
+    if (id.length === 26) {
+      // ulid: the first 10 characters are Unix milliseconds (Crockford base32. Uppercase; I, L, O and U aren't used)
+      e = checkId(id, /[0-9A-HJKMNP-TV-Z]/, "Note IDs in this format (ulid) are uppercase ASCII letters and digits only (I, L, O and U aren't used)");
+      if (e) return e;
+      var C = "0123456789ABCDEFGHJKMNPQRSTVWXYZ", n = 0;
+      for (var i = 0; i < 10; i++) n = n * 32 + C.indexOf(id[i]);
+      return { ms: n };
+    }
+    if (id.length === 24) {
+      // meid-family IDs are "1 marker character + 11 hex digits of milliseconds" (the marker is 7, 8, g or similar); objectid has Unix seconds in the first 8 digits.
+      // The marker character varies by implementation, so don't hard-code it: compute both and take whichever gives a plausible date
+      e = checkId(id, /[0-9a-g]/, "Note IDs in this format use only ASCII 0–9 and a–g")
+        || checkId(id.slice(1), /[0-9a-f]/, "In note IDs of this format, everything after the first character is ASCII 0–9 and a–f only");
+      if (e) return e;
+      var meid = parseInt(id.slice(1, 12), 16);
+      var objectid = /^[0-9a-f]+$/.test(id) ? parseInt(id.slice(0, 8), 16) * 1000 : NaN;
+      if (plausible(meid)) return { ms: meid };
+      if (plausible(objectid)) return { ms: objectid };
+      return { err: "Couldn't work out a time from the ID (unexpected format)." };
+    }
+    return checkId(id, /[0-9A-Za-z]/, "Misskey note IDs are ASCII letters and digits only")
+      || lengthErr(id, "Misskey IDs are 10, 16, 24 or 26 characters");
+  }
+
+  function plausible(ms) { return ms >= Date.UTC(2006, 0, 1) && ms <= Date.now() + 86400000; }
+
+  var SHORT_LINK = /(?:vm|vt)\.tiktok\.com\/|tiktok\.com\/t\/|t\.co\//;
+
+  function analyze(line) {
+    if (SHORT_LINK.test(line)) {
+      return { err: "Short URLs don't contain an ID, so the time can't be calculated. Open it in your browser first and paste the long URL that appears." };
+    }
+    for (var i = 0; i < SERVICES.length; i++) {
+      var s = SERVICES[i];
+      var m = line.match(s.re);
+      if (!m) continue;
+      var r = s.parse(m);
+      r.service = s;
+      if (!r.err && !plausible(r.ms)) {
+        r.err = "Couldn't work out a time from the ID (unexpected format).";
+      }
+      return r;
+    }
+    return { err: "Unsupported URL. Paste a post URL from a supported service." };
+  }
+
+  // Format presets. Date, weekday and time are kept separate and combined with the checkboxes
+  var PRESETS = {
+    slash:  { date: "YYYY/MM/DD", weekday: " (ddd)", time: " HH:mm:ss" },
+    hyphen: { date: "YYYY-MM-DD", weekday: " (ddd)", time: " HH:mm:ss" },
+    us:     { date: "MM/DD/YYYY", weekday: " (ddd)", time: " HH:mm:ss" }
+  };
+
+  function currentPattern() {
+    var preset = $("pt-preset").value;
+    if (preset === "custom") return $("pt-custom").value;
+    var p = PRESETS[preset];
+    return p.date + ($("pt-weekday").checked ? p.weekday : "") + ($("pt-dateonly").checked ? "" : p.time);
+  }
+
+  // Longer tokens come first (so MM isn't read as two Ms). Text inside [ ] is printed as is
+  var TOKEN = /\[([^\]]*)\]|YYYY|YY|MM|M|DD|D|HH|H|mm|ss|ddd/g;
+
+  function formatJst(ms, pattern) {
+    var d = new Date(ms + 9 * 3600 * 1000);
+    var v = {
+      YYYY: String(d.getUTCFullYear()),
+      YY: String(d.getUTCFullYear()).slice(-2),
+      MM: pad(d.getUTCMonth() + 1), M: String(d.getUTCMonth() + 1),
+      DD: pad(d.getUTCDate()), D: String(d.getUTCDate()),
+      HH: pad(d.getUTCHours()), H: String(d.getUTCHours()),
+      mm: pad(d.getUTCMinutes()),
+      ss: pad(d.getUTCSeconds()),
+      ddd: WEEK[d.getUTCDay()]
+    };
+    return pattern.replace(TOKEN, function (t, literal) {
+      return literal !== undefined ? literal : v[t];
+    });
+  }
+
+  // A separate key from the Japanese page, since the preset lists differ
+  var STORE_KEY = "post-time-format-en";
+
+  function saveFormat() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        preset: $("pt-preset").value,
+        dateOnly: $("pt-dateonly").checked,
+        weekday: $("pt-weekday").checked,
+        custom: $("pt-custom").value
+      }));
+    } catch (e) {}
+  }
+
+  function loadFormat() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+      if (!s) return;
+      if (s.preset === "custom" || PRESETS[s.preset]) $("pt-preset").value = s.preset;
+      $("pt-dateonly").checked = !!s.dateOnly;
+      $("pt-weekday").checked = !!s.weekday;
+      if (typeof s.custom === "string" && s.custom) $("pt-custom").value = s.custom;
+    } catch (e) {}
+  }
+
+  // With "Custom", the pattern decides everything, so show that the checkboxes have no effect
+  function syncFormatUi() {
+    var custom = $("pt-preset").value === "custom";
+    $("pt-custom-box").hidden = !custom;
+    ["pt-dateonly", "pt-weekday"].forEach(function (id) {
+      $(id).disabled = custom;
+      $(id).parentNode.classList.toggle("pt-off", custom);
+    });
+  }
+
+  function ago(ms) {
+    var sec = Math.floor((Date.now() - ms) / 1000);
+    if (sec < 60) return "just now";
+    if (sec < 3600) { var mi = Math.floor(sec / 60); return mi + (mi === 1 ? " minute ago" : " minutes ago"); }
+    if (sec < 86400) { var h = Math.floor(sec / 3600); return h + (h === 1 ? " hour ago" : " hours ago"); }
+    var d = Math.floor(sec / 86400);
+    return d.toLocaleString() + (d === 1 ? " day ago" : " days ago");
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function render() {
+    var list = $("pt-list");
+    list.textContent = "";
+    var pattern = currentPattern();
+    $("pt-url").value.split(/\s+/).filter(Boolean).forEach(function (line) {
+      var r = analyze(line);
+      var li = el("li", "pt-row");
+
+      if (r.err) {
+        li.appendChild(el("div", "error-text", r.err));
+        li.appendChild(el("div", "pt-url", line));
+        list.appendChild(li);
+        return;
+      }
+
+      var head = el("div", "pt-head");
+      head.appendChild(el("span", "pt-svc", r.service.name));
+      if (r.user) {
+        var href = r.link || (r.service.profile && r.service.profile(r.user));
+        var a = el(href ? "a" : "span", null, "@" + r.user);
+        if (href) {
+          a.href = href;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+        }
+        head.appendChild(a);
+      } else {
+        head.appendChild(el("span", "pt-user-none", "No account name"));
+      }
+      li.appendChild(head);
+
+      var time = formatJst(r.ms, pattern);
+      var tl = el("div", "pt-time-line");
+      tl.appendChild(el("span", "pt-time", time));
+      tl.appendChild(el("span", "pt-ago", ago(r.ms)));
+      var btn = el("button", "pt-copy", "Copy");
+      btn.type = "button";
+      btn.addEventListener("click", function () {
+        navigator.clipboard.writeText(time);
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+      });
+      tl.appendChild(btn);
+      li.appendChild(tl);
+
+      if (r.hint) li.appendChild(el("div", "hint-text", r.hint));
+      // Let the pasted URL lead to the post. Add https:// if it was pasted without it
+      var post = el("a", null, line);
+      post.href = r.postUrl || (/^https?:\/\//.test(line) ? line : "https://" + line.replace(/^\/+/, ""));
+      post.target = "_blank";
+      post.rel = "noopener noreferrer";
+      var urlLine = el("div", "pt-url");
+      urlLine.appendChild(post);
+      li.appendChild(urlLine);
+      list.appendChild(li);
+    });
+  }
+
+  $("pt-url").addEventListener("input", render);
+  ["pt-preset", "pt-dateonly", "pt-weekday", "pt-custom"].forEach(function (id) {
+    $(id).addEventListener(id === "pt-custom" ? "input" : "change", function () {
+      syncFormatUi();
+      saveFormat();
+      render();
+    });
+  });
+  loadFormat();
+  syncFormatUi();
+
+  document.querySelectorAll(".pt-bml-copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      navigator.clipboard.writeText(btn.previousElementSibling.getAttribute("href"));
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = "Copy code"; }, 1500);
+    });
+  });
+
+  var pre = new URLSearchParams(location.search).get("url");
+  if (pre) $("pt-url").value = pre;
+  render();
+})();
+</script>
+</body>
+</html>
