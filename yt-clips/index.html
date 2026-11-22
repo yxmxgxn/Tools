@@ -38,6 +38,9 @@
 </script>
 
 <style>
+  /* display を指定した部品でも hidden で確実に隠れるようにする（指定がないと hidden が効かない） */
+  [hidden] { display: none !important; }
+
   .player-wrap {
     position: relative;
     width: 100%;
@@ -106,7 +109,6 @@
     padding: 10px 14px; border-radius: 8px;
     background: #333; color: #fff; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25);
   }
-  .toast[hidden] { display: none; }
   .toast button { background: transparent; color: #d9c8f0; border-color: #777; white-space: nowrap; }
   .clip-thumb { width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: var(--code-bg); display: block; cursor: pointer; }
   .clip-body { min-width: 0; }
@@ -220,7 +222,11 @@
   <code>-10</code>〜<code>+10</code> で秒をずらせます。プレビュー中なら、プレイヤーもその位置に飛ぶので、聞きながら合わせられます。</p>
 
   <h2>共有</h2>
-  <p class="hint-text" style="margin:0">このURLにプレイリストがまるごと入っています。アドレスバーのURLも同じものに自動で更新されます。</p>
+  <p class="hint-text" style="margin:0">このURLにプレイリストがまるごと入っています。アドレスバーのURLは、編集中のすべて（チャプター名も）が入った形で自動で更新されます。</p>
+  <div class="option-row">
+    <label><input type="checkbox" id="share-labels" checked> チャプター名を共有URLに入れる</label>
+  </div>
+  <p class="hint-text" style="margin:-0.5rem 0 0">外すとURLが短くなります。開いた人の画面には、チャプター名のかわりに動画のタイトルが出ます。</p>
   <div class="result">
     <div class="output-row">
       <code id="share-url" class="output"></code>
@@ -361,12 +367,14 @@
 
   // ---------- 共有URL（状態 ⇔ クエリ） ----------
   // c=動画ID~開始~終了~ラベル を区間の数だけ並べる。~ は URL でエスケープされないので短く読みやすい
-  function encodeState() {
+  // withLabels が false のときはチャプター名を入れない（共有URLを短くしたいとき用）
+  function encodeState(withLabels) {
+    if (withLabels === undefined) withLabels = true;
     var parts = [];
     if (state.title) parts.push("title=" + encodeURIComponent(state.title));
     state.items.forEach(function (it) {
       var v = it.id + "~" + fmtNum(it.s) + "~" + (it.e == null ? "" : fmtNum(it.e));
-      if (it.label) v += "~" + it.label;
+      if (withLabels && it.label) v += "~" + it.label;
       parts.push("c=" + encodeURIComponent(v).replace(/%7E/gi, "~"));
     });
     if (state.loop) parts.push("loop=1");
@@ -385,8 +393,11 @@
     });
     return out;
   }
+  // 共有用のURL。アドレスバーや保存は常にチャプター名入り、共有だけ「入れる／入れない」を選べる
+  var SHARE_LABELS_KEY = "yt-clips:share-labels";
+  function shareWithLabels() { return $("share-labels").checked; }
   function shareUrl() {
-    var q = encodeState();
+    var q = encodeState(shareWithLabels());
     return location.origin + location.pathname + (q ? "?" + q : "");
   }
 
@@ -1066,12 +1077,18 @@
     var lines = [];
     if (state.title) lines.push(state.title);
     state.items.forEach(function (it, i) {
-      lines.push((i + 1) + ". " + nameOf(it) + "　" + fmtTime(it.s) + "〜" + (it.e == null ? "" : fmtTime(it.e)));
+      var nm = shareWithLabels() ? nameOf(it) : (titles[it.id] || it.id);
+      lines.push((i + 1) + ". " + nm + "　" + fmtTime(it.s) + "〜" + (it.e == null ? "" : fmtTime(it.e)));
       lines.push("https://youtu.be/" + it.id + (it.s >= 1 ? "?t=" + Math.floor(it.s) : ""));
     });
     lines.push("", "▶ 続けて再生: " + shareUrl());
     return lines.join("\n");
   }
+  try { if (localStorage.getItem(SHARE_LABELS_KEY) === "0") $("share-labels").checked = false; } catch (e) {}
+  $("share-labels").addEventListener("change", function () {
+    try { localStorage.setItem(SHARE_LABELS_KEY, this.checked ? "1" : "0"); } catch (e) {}
+    render();
+  });
   $("share-copy").addEventListener("click", function () { copy(shareUrl(), this); });
   $("share-text").addEventListener("click", function () { copy(shareText(), this); });
   if (navigator.share) {
