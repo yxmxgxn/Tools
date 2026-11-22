@@ -1,8 +1,10 @@
-// YouTube区間プレイリスト（/yt-clips/）の短縮URL。
+// Cliplist（https://cliplist.yxmxgxn.workers.dev/）のWorker。
+// YouTubeの好きな区間をつないで再生するプレイリストのサイト。画面は public/ の静的ファイル。
 //
-//   POST /yt-clips/api/shorten   本文 {v:1, title, loop, items:[{id,s,e,label}]} → {"code": "Ab3xK9qZ", "url": "https://…/yt-clips/s/Ab3xK9qZ"}
-//   GET  /yt-clips/api/status    短縮が使えるか（KVが付いているか）→ {"ok": true|false}
-//   GET  /yt-clips/s/<code>      長いURL /yt-clips/?c=... へ転送する
+//   POST /api/shorten   本文 {v:1, title, loop, items:[{id,s,e,label}]} → {"code": "Ab3xK9qZ", "url": "https://…/Ab3xK9qZ"}
+//   GET  /api/status    短縮が使えるか（KVが付いているか）→ {"ok": true|false}
+//   GET  /<code>        短縮URL。長いURL /?c=... へ転送する
+//   それ以外            public/ の静的ファイルを返す
 //
 // 短縮URLは「共有した時点のプレイリスト」を預かって短い名前を付けるだけのシェア専用URL。
 // 一度発行した中身は変わらない（編集・削除はない）。中身を変えたいときは、新しく発行する。
@@ -15,10 +17,10 @@
 //  - このサイトの画面からのPOSTだけを受け付ける。大きさと回数に上限を付ける
 //  - KV（CLIPS）が付いていないときは、短縮は使えない（status が ok:false を返す）
 
-export const CLIPS_PREFIX = '/yt-clips/';
-const SHORTEN_PATH = '/yt-clips/api/shorten';
-const STATUS_PATH = '/yt-clips/api/status';
-const SHORT_RE = /^\/yt-clips\/s\/([0-9A-Za-z]{6,12})\/?$/;
+const SHORTEN_PATH = '/api/shorten';
+const STATUS_PATH = '/api/status';
+// 短縮コードは英数字8〜12文字。静的ファイル（.を含む）やほかのページ名とは重ならない
+const SHORT_RE = /^\/([0-9A-Za-z]{8,12})\/?$/;
 
 const MAX_BODY = 32_000;
 const MAX_ITEMS = 300;
@@ -82,7 +84,7 @@ export function normalizeData(d) {
   return data;
 }
 
-// 保存したデータから、/yt-clips/ が読める長いURLのクエリ（第1版）を作る。
+// 保存したデータから、トップページ（/）が読める長いURLのクエリ（第1版）を作る。
 // 長いURLの書き方を変えたときは、ここも合わせて直せば、保存済みの短縮URLはそのまま開ける
 const enc = (s) => encodeURIComponent(s).replace(/%7E/gi, '~');
 export function toQueryV1(data) {
@@ -141,21 +143,26 @@ async function handleShorten(request, env) {
     if (have === null) await env.CLIPS.put(code, canon);
     else if (have !== canon) continue;
     const base = new URL(request.url).origin;
-    return json({ code, url: `${base}${CLIPS_PREFIX}s/${code}` });
+    return json({ code, url: `${base}/${code}` });
   }
   return json({ error: '発行できませんでした。もう一度試してください' }, 500);
 }
 
 async function handleShort(request, env, code) {
+  // コードの形をしていても、保存されていなければ、ふつうのページ（静的ファイル）として扱う
   const notFound = (msg) => new Response(
     `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
-    `<title>見つかりません | YouTube区間プレイリスト</title>` +
+    `<title>見つかりません | Cliplist</title>` +
     `<p style="font-family:sans-serif;padding:1rem">${msg}</p>` +
-    `<p style="font-family:sans-serif;padding:0 1rem"><a href="${CLIPS_PREFIX}">YouTube区間プレイリストを開く</a></p>`,
+    `<p style="font-family:sans-serif;padding:0 1rem"><a href="/">Cliplist を開く</a></p>`,
     { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
   if (!env || !env.CLIPS) return notFound('短縮URLはいま使えません。');
   const raw = await env.CLIPS.get(code);
-  if (raw === null) return notFound('この短縮URLのプレイリストは見つかりませんでした。');
+  if (raw === null) {
+    const res = env.ASSETS ? await env.ASSETS.fetch(request) : null;
+    if (res && res.status !== 404) return res;
+    return notFound('この短縮URLのプレイリストは見つかりませんでした。');
+  }
   let data = null;
   try { data = JSON.parse(raw); } catch (e) {}
   // 版ごとに読み分ける。いまは第1版だけ
@@ -164,16 +171,17 @@ async function handleShort(request, env, code) {
   // 中身は書き換えないので、転送先はしばらくキャッシュしてよい
   return new Response(null, {
     status: 302,
-    headers: { location: `${CLIPS_PREFIX}?${q}`, 'cache-control': 'public, max-age=3600' },
+    headers: { location: `/?${q}`, 'cache-control': 'public, max-age=3600' },
   });
 }
 
-// /yt-clips/ 以下のうち、このWorkerが受け持つパスなら Response を、そうでなければ null を返す
-export async function handleClips(request, env) {
-  const url = new URL(request.url);
-  if (url.pathname === SHORTEN_PATH) return handleShorten(request, env);
-  if (url.pathname === STATUS_PATH) return json({ ok: !!(env && env.CLIPS) });
-  const m = url.pathname.match(SHORT_RE);
-  if (m && (request.method === 'GET' || request.method === 'HEAD')) return handleShort(request, env, m[1]);
-  return null;
-}
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname === SHORTEN_PATH) return handleShorten(request, env);
+    if (url.pathname === STATUS_PATH) return json({ ok: !!(env && env.CLIPS) });
+    const m = url.pathname.match(SHORT_RE);
+    if (m && (request.method === 'GET' || request.method === 'HEAD')) return handleShort(request, env, m[1]);
+    return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
+  },
+};

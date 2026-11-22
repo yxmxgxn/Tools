@@ -23,6 +23,16 @@ jobs:
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
         run: bash build/build.sh
 
+      # Cliplist（sites/cliplist）は、ツール集とは別のWorker。ビルドはなく、public/ をそのまま配る
+      - name: Deploy Cliplist to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4'
+          workingDirectory: sites/cliplist
+          command: deploy --env=""
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
